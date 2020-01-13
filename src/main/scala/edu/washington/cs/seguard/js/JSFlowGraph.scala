@@ -1,0 +1,211 @@
+package edu.washington.cs.seguard.js
+
+import java.nio.file.Paths
+
+import com.ibm.wala.cast.ir.ssa.{AstGlobalRead, AstGlobalWrite, AstLexicalWrite}
+import com.ibm.wala.cast.js.ipa.callgraph.JSCallGraphUtil
+import com.ibm.wala.cast.js.ssa.{JavaScriptCheckReference, JavaScriptInvoke, JavaScriptPropertyRead, JavaScriptPropertyWrite, PrototypeLookup}
+import com.ibm.wala.cast.js.translator.CAstRhinoTranslatorFactory
+import com.ibm.wala.cast.js.types.JavaScriptMethods
+import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
+import com.ibm.wala.ipa.callgraph.{AnalysisCacheImpl, CGNode, CallGraph}
+import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
+import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
+import edu.washington.cs.seguard.{BetterDot, EdgeType, NodeType}
+
+import scala.jdk.CollectionConverters._
+
+object JSFlowGraph {
+  def getMethodName(s: String): Option[String] = {
+    if (s.contains(".js@")) {
+      None
+    } else {
+      if (s.contains("/")) {
+        Some(s.split('/').last)
+      } else {
+        Some(s)
+      }
+    }
+  }
+  def getMethodName(node: CGNode): Option[String] = {
+    getMethodName(node.getMethod.getDeclaringClass.getName.toString)
+  }
+  def addCallGraph(dot: BetterDot, jsPath: String) : CallGraph = {
+    val path = Paths.get(jsPath)
+    JSCallGraphUtil.setTranslatorFactory(new CAstRhinoTranslatorFactory)
+    val cg = JSCallGraphBuilderUtil.makeScriptCG(path.getParent.toString, path.getFileName.toString)
+    cg.stream().filter(isApplicationNode)
+      .forEach(node => {
+        cg.getSuccNodes(node).asScala.filter(isApplicationNode).foreach((succ: CGNode) => {
+          val u = getMethodName(node)
+          val v = getMethodName(succ)
+          if (u.isDefined && v.isDefined) {
+            dot.drawNode(u.get, NodeType.METHOD)
+            dot.drawNode(v.get, NodeType.METHOD)
+            dot.drawEdge(u.get, v.get, EdgeType.CALL)
+          }
+        })
+      })
+    cg
+  }
+
+  def isApplicationNode(m: CGNode) : Boolean = {
+    val className = m.getMethod.getDeclaringClass.getName.toString
+    className != "LFakeRoot" && className != "Lprologue.js" && className !="LFunction" &&
+      m.getMethod.getReference != JavaScriptMethods.ctorReference
+  }
+
+  def getDef(defUse: DefUse, symbolTable: SymbolTable, i: Int): Option[String] = {
+    defUse.getDef(i) match {
+      case null =>
+        if (symbolTable.isConstant(i)) {
+          val v = symbolTable.getConstantValue(i)
+          if (v == null) {
+            None
+          } else {
+            Some(v.toString)
+          }
+        } else {
+          None
+        }
+      case other => abstractInstruction(defUse, symbolTable, other)
+    }
+  }
+
+  /*
+  1. What does "__WALA__int3rnal__global" mean?
+
+    point to global context
+
+  -- https://sourceforge.net/p/wala/mailman/message/32491808/
+   */
+  def abstractInstruction(defUse: DefUse, symTable: SymbolTable, instruction: SSAInstruction): Option[String] = {
+    instruction match {
+      case read: AstGlobalRead => {
+        var ret = read.getGlobalName
+        assert(ret.startsWith("global "))
+        ret = ret.stripPrefix("global ")
+        if (ret == "__WALA__int3rnal__global" ||
+            ret == "Function") { // point to global context
+          None
+        } else {
+          Some(ret)
+        }
+      }
+      case invoke:JavaScriptInvoke => {
+        val defs = (0 until invoke.getNumberOfUses).flatMap(i => getDef(defUse, symTable, invoke.getUse(i))).toList
+        if (defs.nonEmpty) {
+          getMethodName(defs.head).map(_ + "(%s)".format(defs.tail.mkString(", ")))
+        } else {
+          None
+        }
+      }
+      case binop:SSABinaryOpInstruction => Some(binop.getOperator.toString)
+      case uop:SSAUnaryOpInstruction => Some("[uop]" + uop.getOpcode.toString)
+      case get:SSAGetInstruction => Some("[get]" + get.getDeclaredField.getName.toString)
+      case _:JavaScriptPropertyWrite => None // FIXME: how to retrieve property name?
+      case _:JavaScriptPropertyRead => None // FIXME: how to retrieve property name?
+      case _:AstGlobalWrite => None
+      case _:AstGlobalRead => None
+      case _:JavaScriptCheckReference => None
+      case _:SSAReturnInstruction => None
+      case _:AstLexicalWrite => None
+      case _:PrototypeLookup => None
+      case _:SSAConditionalBranchInstruction => None
+      case _:SSANewInstruction => None
+      case _:SSAGotoInstruction => None
+      case null => None
+      case _ => {
+        throw new RuntimeException(instruction.toString)
+      }
+    }
+  }
+
+  def addDataFlowGraph(dot: BetterDot, cg: CallGraph) {
+    val icfg = ExplodedInterproceduralCFG.make(cg)
+    val dataflow = new DataFlow(icfg)
+    val results = dataflow.analyze()
+    val superGraph = dataflow.getSupergraph
+
+    for (n <- superGraph.getProcedureGraph.asScala) {
+      if (isApplicationNode(n)) {
+        println("====== Method " + n + " =======")
+        println(n.getIR)
+        println("===============================")
+      }
+    }
+
+    /*
+
+    For function calls (i.e., something like "f()"), the fake
+      target method is called "do", for constructor calls (i.e.,
+      something like "new f()"), the target method is "ctor". Again,
+    the actual method to be invoked is passed as an argument (in
+      an SSA variable) to the fake target method. It may help to
+      print the IR of the function containing such calls (using its
+      normal toString method); this will print out quite a bit of
+      information about the individual calls.
+
+     -- https://sourceforge.net/p/wala/mailman/message/30369613/
+     */
+
+    for (bb <- superGraph.asScala) {
+      if (isApplicationNode(bb.getNode)) {
+        val symTable = bb.getNode.getIR.getSymbolTable
+        val instruction = bb.getDelegate.getInstruction
+        val currentNode: Option[String] = abstractInstruction(bb.getNode.getDU, symTable, instruction)
+
+        if (currentNode.isDefined) {
+          println("======= Instruction of BB " + bb.getDelegate.getNumber + " of method " + bb.getNode + "==============")
+          println(instruction, instruction.toString(symTable))
+
+          // DFA based analysis
+          // FIXME
+          val solution = results.getResult(bb)
+          val iter = solution.intIterator
+          while (iter.hasNext) {
+            val next = iter.next()
+            val absValues = dataflow.getDomain.getMappedObject(next)
+            println("== Dataflow " + next + ": " + absValues)
+            val to = absValues.fst
+            val fromValues = absValues.snd
+            for (from <- fromValues.asScala) {
+              val fromValue = getDef(bb.getNode.getDU, symTable, from)
+              val toValue = getDef(bb.getNode.getDU, symTable, to)
+              if (fromValue.isDefined && toValue.isDefined) {
+                dot.drawNode(fromValue.get, NodeType.EXPR)
+                dot.drawNode(toValue.get, NodeType.EXPR)
+                dot.drawEdge(fromValue.get, toValue.get, EdgeType.DATAFLOW)
+              }
+            }
+          }
+
+          // DefUse based analysis
+          val u = currentNode.get
+          dot.drawNode(u, NodeType.STMT)
+          for (iu <- 0 until instruction.getNumberOfUses) {
+            val use = instruction.getUse(iu)
+            val defined = bb.getNode.getDU.getDef(use)
+            if (defined != null) {
+              val defineNode = abstractInstruction(bb.getNode.getDU, symTable, defined)
+              if (defineNode.isDefined) {
+                val v = defineNode.get
+                dot.drawNode(v, NodeType.STMT)
+                dot.drawEdge(v, u, EdgeType.DATAFLOW)
+              }
+            } else {
+              if (symTable.isConstant(use)) {
+                var v = symTable.getConstantValue(use).toString
+                if (v.startsWith("L")) {
+                  v = getMethodName(v).get
+                }
+                dot.drawNode("[const]" + v, NodeType.CONSTANT)
+                dot.drawEdge(v, u, EdgeType.DATAFLOW)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

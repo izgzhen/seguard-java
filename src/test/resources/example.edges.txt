@@ -1,0 +1,10 @@
+f-[DATAFLOW]->f()
+g()-[DATAFLOW]->add
+h-[CALL]->f
+Lexample.js-[CALL]->h
+h-[CALL]->g
+h-[DATAFLOW]->h()
+g-[CALL]->f
+f()-[DATAFLOW]->add
+g-[DATAFLOW]->g()
+1.0-[DATAFLOW]->add

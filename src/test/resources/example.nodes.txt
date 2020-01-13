@@ -1,0 +1,13 @@
+add
+f
+f()
+g
+h
+h()
+g()
+$$undefined
+[const]f
+Lexample.js
+[const]h
+[const]1.0
+[const]g

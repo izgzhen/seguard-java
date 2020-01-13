@@ -1,0 +1,27 @@
+grant {
+    permission java.io.FilePermission "log4j.properties", "read";
+    permission java.io.FilePermission "classes.txt", "read";
+    permission java.io.FilePermission "AndroidCallbacks.txt", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "soot.class.path", "read";
+    permission java.io.FilePermission "android-platforms", "read";
+    permission java.io.FilePermission "lib/rt.jar","read";
+    permission java.io.FilePermission "android-platforms/-", "read";
+    permission java.lang.RuntimePermission "createClassLoader";
+    permission java.lang.RuntimePermission "modifyThread";
+    permission java.io.FilePermission "/tmp/-", "read,write,delete";
+    permission java.io.FilePermission "/scratch/-", "read,write,delete";
+    permission java.lang.RuntimePermission "accessDeclaredMembers";
+    permission java.io.FilePermission "sootOutput", "read,write";
+    permission java.io.FilePermission "/data/datasets/-", "read,write";
+    permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+    permission java.lang.management.ManagementPermission "control";
+    permission java.io.FilePermission "SourcesAndSinks.txt", "read";
+    permission java.io.FilePermission "schema/SourcesAndSinks.xsd", "read";
+    permission java.io.FilePermission "node-colors.txt", "read";
+    permission java.io.FilePermission "../config.yaml", "read";
+    permission java.io.FilePermission "edge-colors.txt", "read";
+    permission java.util.PropertyPermission "java.runtime.name", "read";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
+    permission java.util.PropertyPermission "http.agent", "read";
+};
