@@ -19,12 +19,16 @@ import java.util.Map;
 
 public class AliasRewriter extends SceneTransformer {
     private Logger logger = LoggerFactory.getLogger(AliasRewriter.class);
+    private final Conditions conditions;
+
+    public AliasRewriter(Conditions conditions) {
+        this.conditions = conditions;
+    }
 
     @Override
     protected void internalTransform(String phaseName, Map<String, String> options) {
-        val timer = new Util.SimpleTimer();
         for (SootClass c : Scene.v().getClasses()) {
-            if (Conditions.blacklisted(c) || c.getName().contains("dummyMain") || c.isJavaLibraryClass() || (!c.isApplicationClass())) {
+            if (conditions.blacklisted(c) || c.getName().contains("dummyMain") || c.isJavaLibraryClass() || (!c.isApplicationClass())) {
                 continue;
             }
             logger.info("Alias transforming class {}", c.getName());

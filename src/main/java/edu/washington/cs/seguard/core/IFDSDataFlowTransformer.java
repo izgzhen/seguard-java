@@ -34,9 +34,9 @@ public class IFDSDataFlowTransformer extends SceneTransformer {
         solver.solve();
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Done");
 
-        if (Config.v().isDebug()) {
+        if (config.isDebug()) {
             try {
-                val printWriter = new PrintWriter(Config.v().getAbstractionDumpPath());
+                val printWriter = new PrintWriter(config.getAbstractionDumpPath());
                 for (val m : analysis.getVisitedMethods()) {
                     printWriter.println("====== Method " + m.getSignature() + " =======");
                     printWriter.println(m.getActiveBody());

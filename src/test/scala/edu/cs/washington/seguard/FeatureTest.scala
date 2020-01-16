@@ -1,6 +1,6 @@
 package edu.cs.washington.seguard
 
-import edu.washington.cs.seguard.{BetterDot, Conditions, NodeType, SootOptionManager, Util}
+import edu.washington.cs.seguard.{BetterDot, Conditions, Config, NodeType, SootOptionManager, Util}
 import edu.washington.cs.seguard.Util.Lang
 import edu.washington.cs.seguard.core.FlowGraph
 import org.junit.Test
@@ -15,9 +15,10 @@ class FeatureTest {
   }
 
   def runAnalysisOnTestResource(): BetterDot = {
-    val conditions = new Conditions("SourcesAndSinks.txt")
+    val config = Config.load("src/test/resources/config.yaml")
+    val conditions = new Conditions("SourcesAndSinks.txt", config)
     val dot = new BetterDot(new DotGraph(""), conditions)
-    val flowGraph = new FlowGraph(conditions, null, dot)
+    val flowGraph = new FlowGraph(conditions, null, dot, config)
     SootOptionManager.Manager().buildOptionTest()
     Scene.v.loadNecessaryClasses()
     flowGraph.Main()

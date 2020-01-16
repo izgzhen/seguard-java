@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.Set;
 
 class Propagator {
-    static Set<Pair<Value, Set<Abstraction>>> getTainted(List<ValueBox> fromValues, Value toValue, Value sourceValue, Set<Abstraction> sourceAbstractions) {
+    static Set<Pair<Value, Set<Abstraction>>> getTainted(Config config, List<ValueBox> fromValues, Value toValue, Value sourceValue, Set<Abstraction> sourceAbstractions) {
         Set<Pair<Value, Set<Abstraction>>> newFlow = new LinkedHashSet<>();
         if (toValue != null &&  fromValues != null) {
             Set<Abstraction> constants = new HashSet<>();
             for (ValueBox box : fromValues) {
                 if (box.getValue() instanceof StringConstant) {
-                    constants.add(Abstraction.v(Config.v(), ((StringConstant) box.getValue()).value));
+                    constants.add(Abstraction.v(config, ((StringConstant) box.getValue()).value));
                 }
                 if (box.getValue() instanceof IntConstant) {
                     constants.add(Abstraction.v((IntConstant) box.getValue()));

@@ -36,11 +36,13 @@ public class FlowGraph {
     final private Conditions conditions;
     final private StatManager statManager;
     final private BetterDot dot;
+    final private Config config;
 
-    public FlowGraph(Conditions conditions, StatManager statManager, BetterDot dot) {
+    public FlowGraph(Conditions conditions, StatManager statManager, BetterDot dot, Config config) {
         this.conditions = conditions;
         this.statManager = statManager;
         this.dot = dot;
+        this.config = config;
     }
 
     private static SootMethod getInvokedMethod(Unit u) {
@@ -68,10 +70,10 @@ public class FlowGraph {
         val staticStringMap = setEntrypointsAndGetStaticStringMap();
         collectStaticStringFields(staticStringMap);
 
-        val transformer = new IFDSDataFlowTransformer(conditions, Config.v());
+        val transformer = new IFDSDataFlowTransformer(conditions, config);
 
         // Resolve some aliasing by instrumentation to ease the next phase of analysis
-        PackManager.v().getPack("wjtp").add(new Transform("wjtp.aliasrewriter", new AliasRewriter()));
+        PackManager.v().getPack("wjtp").add(new Transform("wjtp.aliasrewriter", new AliasRewriter(conditions)));
         // Run our IFDS/IDE data-flow analysis (DFA)
         PackManager.v().getPack("wjtp").add(new Transform("wjtp.herosifds", transformer));
         // Collect results into the flow-graph by first analyzing the data-flow facts from previous FDA and also
@@ -98,7 +100,7 @@ public class FlowGraph {
                 if (cls.isJavaLibraryClass() || !m.hasActiveBody()) {
                     continue;
                 }
-                if (Conditions.blacklisted(m)) {
+                if (conditions.blacklisted(m)) {
                     continue;
                 }
                 Body b = m.getActiveBody();
@@ -158,7 +160,7 @@ public class FlowGraph {
             // if the application class inherits some library class, print the inherited library class
             // and count such type of application classes. we might consider them as priority
             SootClass cls = m.getDeclaringClass();
-            if (Conditions.blacklisted(cls) || Conditions.blacklisted(m)) {
+            if (conditions.blacklisted(cls) || conditions.blacklisted(m)) {
                 continue;
             }
             if (cls.hasSuperclass() || cls.getInterfaceCount() > 0) {
@@ -191,8 +193,8 @@ public class FlowGraph {
         if (statManager != null) {
             statManager.put(CG_SIZE, cg.size());
         }
-        if (Config.v().isDebug()) {
-            val printWriter = new PrintWriter(Config.v().getCallGraphDumpPath());
+        if (config.isDebug()) {
+            val printWriter = new PrintWriter(config.getCallGraphDumpPath());
             printWriter.write(cg.toString());
             printWriter.close();
         }
@@ -206,7 +208,7 @@ public class FlowGraph {
             }
             for (SootMethod method : cls.getMethods()) {
                 if (method.isJavaLibraryMethod()) { continue; }
-                if (Conditions.blacklisted(method)) { continue; }
+                if (conditions.blacklisted(method)) { continue; }
                 try {
                     method.retrieveActiveBody();
                 } catch (RuntimeException e) {
@@ -323,7 +325,7 @@ public class FlowGraph {
     }
 
     private void addCallEdge(SootMethod src, SootMethod tgt) {
-        if (Conditions.blacklisted(src)) { return; }
+        if (conditions.blacklisted(src)) { return; }
         dot.drawNode(src);
         dot.drawNode(tgt);
         if (!tgt.getDeclaringClass().getName().equals("java.lang.RuntimeException")) {
@@ -333,7 +335,7 @@ public class FlowGraph {
 
     private void collectStaticStringFields(Map<SootClass, Map<String, String>> staticStringMap) {
         for (SootClass cls : staticStringMap.keySet()) {
-            if (Conditions.blacklisted(cls)) { continue;}
+            if (conditions.blacklisted(cls)) { continue;}
             try {
                 dot.drawNode(cls.getMethodByName("<clinit>"));
                 for (String fieldName : staticStringMap.get(cls).keySet()) {

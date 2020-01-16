@@ -137,7 +137,7 @@ public class DataFlowAnalysis
                     LinkedHashSet<Pair<Value, Set<Abstraction>>> newFlow = new LinkedHashSet<>();
                     if (destinationMethod.getName().equals("<clinit>")
                             || destinationMethod.getSubSignature().equals("void run()")
-                            || Conditions.blacklisted(destinationMethod)) {
+                            || conditions.blacklisted(destinationMethod)) {
                         return Collections.singleton(source);
                     }
                     if (source != zeroValue()) {
@@ -228,15 +228,15 @@ public class DataFlowAnalysis
                         // Propagate to base
                         if (((Stmt) callSite).getInvokeExpr() instanceof InstanceInvokeExpr) {
                             InstanceInvokeExpr expr = (InstanceInvokeExpr) ((Stmt) callSite).getInvokeExpr();
-                            if (!Conditions.blacklisted(expr.getMethod())) {
-                                newFlow.addAll(Propagator.getTainted(expr.getUseBoxes(), expr.getBase(), source.getO1(), source.getO2()));
+                            if (!conditions.blacklisted(expr.getMethod())) {
+                                newFlow.addAll(Propagator.getTainted(config, expr.getUseBoxes(), expr.getBase(), source.getO1(), source.getO2()));
                             }
                         }
 
                         // Propagate to the left hand side
                         if (callSite instanceof DefinitionStmt) {
                             final DefinitionStmt definitionStmt = (DefinitionStmt) callSite;
-                            newFlow.addAll(Propagator.getTainted(definitionStmt.getUseBoxes(), definitionStmt.getLeftOp(), source.getO1(), source.getO2()));
+                            newFlow.addAll(Propagator.getTainted(config, definitionStmt.getUseBoxes(), definitionStmt.getLeftOp(), source.getO1(), source.getO2()));
                         }
                     } else {
                         if (callSite instanceof DefinitionStmt) {

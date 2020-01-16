@@ -1,0 +1,7 @@
+sensitiveEntrypointClassKeywords: []
+sensitiveMethodNames: []
+sensitiveMethodSigs: []
+sensitivePackageNameKeywords: []
+dataflowClassNames: []
+blacklistedPackagePrefixes: []
+sensitiveConstStringKeywords: []

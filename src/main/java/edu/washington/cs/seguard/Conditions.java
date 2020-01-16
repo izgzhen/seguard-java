@@ -6,18 +6,20 @@ import soot.SootMethod;
 import java.io.IOException;
 
 public class Conditions {
-    private SourceSinkManager manager;
+    private final SourceSinkManager manager;
+    private final Config config;
 
-    public Conditions(String sourceSinkFile) throws IOException {
+    public Conditions(String sourceSinkFile, Config config) throws IOException {
         manager = new SourceSinkManager(sourceSinkFile);
+        this.config = config;
     }
 
     private boolean isSensitiveMethodName(String name) {
-        return Config.v().sensitiveMethodNames.contains(name);
+        return config.sensitiveMethodNames.contains(name);
     }
 
     public boolean isDataflowMethod(SootMethod method) {
-        return Config.v().dataflowClassNames.contains(method.getClass().getName());
+        return config.dataflowClassNames.contains(method.getClass().getName());
     }
 
     public boolean isSensitiveMethod(SootMethod method) {
@@ -36,7 +38,7 @@ public class Conditions {
 
     private boolean isSensitiveEntrypointClass(SootClass cls) {
         String name = cls.getName();
-        for (String keyword : Config.v().sensitiveEntrypointClassKeywords) {
+        for (String keyword : config.sensitiveEntrypointClassKeywords) {
             if (name.contains(keyword)) {
                 return true;
             }
@@ -45,7 +47,7 @@ public class Conditions {
     }
 
     private boolean isSensitivePackageName(String name) {
-        for (String keyword : Config.v().sensitivePackageNameKeywords) {
+        for (String keyword : config.sensitivePackageNameKeywords) {
             if (name.contains(keyword)) {
                 return true;
             }
@@ -99,8 +101,8 @@ public class Conditions {
         return null;
     }
 
-    public static boolean blacklisted(SootClass cls) {
-        for (String blacklistedPackagePrefix : Config.v().blacklistedPackagePrefixes) {
+    public boolean blacklisted(SootClass cls) {
+        for (String blacklistedPackagePrefix : config.blacklistedPackagePrefixes) {
             if (cls.getPackageName().startsWith(blacklistedPackagePrefix)) {
                 return true;
             }
@@ -108,7 +110,7 @@ public class Conditions {
         return false;
     }
 
-    public static boolean blacklisted(SootMethod method) {
+    public boolean blacklisted(SootMethod method) {
         return blacklisted(method.getDeclaringClass());
     }
 }

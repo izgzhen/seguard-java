@@ -46,9 +46,10 @@ public class App
         String dotPath = cmd.getOptionValue("dotPath");
         String sourceSinkFile = cmd.getOptionValue("sourceSinkFile");
         String androidPlatforms = cmd.getOptionValue("android");
-        Config.v().setDebug(cmd.hasOption("d"));
-        Config.v().setAbstractionDumpPath(apkPath + ".abstraction.txt");
-        Config.v().setCallGraphDumpPath(apkPath + ".callgraph.txt");
+        val config = Config.load("../config.yaml"); // FIXME: pass in through parameters
+        config.setDebug(cmd.hasOption("d"));
+        config.setAbstractionDumpPath(apkPath + ".abstraction.txt");
+        config.setCallGraphDumpPath(apkPath + ".callgraph.txt");
         val statManager = new StatManager(apkPath, mode);
         val manifest = new ProcessManifest(apkPath);
 
@@ -59,11 +60,11 @@ public class App
                         mode, statManager, manifest);
                 break;
             case "core":
-                Conditions conditions = new Conditions(sourceSinkFile);
+                Conditions conditions = new Conditions(sourceSinkFile, config);
                 val dot = new BetterDot(new DotGraph(""), conditions);
                 if (lang == null || lang.equals("java")) {
                     System.out.println("Generating CallGraph (Spark)...");
-                    val flowGraph = new FlowGraph(conditions, statManager, dot);
+                    val flowGraph = new FlowGraph(conditions, statManager, dot, config);
                     SootOptionManager.Manager().buildOptionFlowGraph(
                             androidPlatforms, apkPath + ".out",
                             apkPath, "spark", manifest);

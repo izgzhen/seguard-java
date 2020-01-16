@@ -71,10 +71,11 @@ public class AppTest
         SootMethod method = testClass.getMethodByName("dummyMainMethod");
         method.retrieveActiveBody();
         Scene.v().setEntryPoints(Collections.singletonList(method));
-        Conditions conditions = new Conditions("SourcesAndSinks.txt");
-        IFDSDataFlowTransformer transformer = new IFDSDataFlowTransformer(conditions, Config.v());
+        val config = Config.load("src/test/resources/config.yaml");
+        val conditions = new Conditions("SourcesAndSinks.txt", config);
+        IFDSDataFlowTransformer transformer = new IFDSDataFlowTransformer(conditions, config);
         System.out.println(method.getActiveBody());
-        AliasRewriter rewriter = new AliasRewriter();
+        val rewriter = new AliasRewriter(conditions);
         PackManager.v().getPack("wjtp").add(new Transform("wjtp.aliasrewriter", rewriter));
         PackManager.v().getPack("wjtp").add(new Transform("wjtp.herosifds", transformer));
         PackManager.v().getPack("jtp").add(new Transform("jtp.myTransform", new BodyTransformer() {
@@ -122,7 +123,7 @@ public class AppTest
 
     @Test
     public void testJS1() throws IOException {
-        val conditions = new Conditions("SourcesAndSinks.txt");
+        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);
@@ -132,7 +133,7 @@ public class AppTest
 
     @Test
     public void testJS2() throws IOException {
-        val conditions = new Conditions("SourcesAndSinks.txt");
+        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/eventstream.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);
@@ -142,7 +143,7 @@ public class AppTest
 
     @Test
     public void testJS3() throws IOException {
-        val conditions = new Conditions("SourcesAndSinks.txt");
+        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example2.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);

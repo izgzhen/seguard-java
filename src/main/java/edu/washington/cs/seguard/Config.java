@@ -28,24 +28,16 @@ public class Config {
     @Getter @Setter boolean debug;
     @Getter @Setter String abstractionDumpPath;
     @Getter @Setter String callGraphDumpPath;
-    private static final Config config = init();
 
-    private static Config init() {
+    public static Config load(String path) {
         Representer rep = new Representer();
         rep.getPropertyUtils().setSkipMissingProperties(true);
         Yaml yaml = new Yaml(new Constructor(Config.class), rep);
         try {
-            InputStream inputStream = new FileInputStream(new File("../config.yaml"));
+            InputStream inputStream = new FileInputStream(new File(path));
             return yaml.load(inputStream);
         } catch (Exception e) {
             throw new RuntimeException(e.toString());
         }
-    }
-
-    /**
-     * @return the config
-     */
-    public static Config v() {
-        return config;
     }
 }
