@@ -1,0 +1,14 @@
+language: java
+jdk:
+  - openjdk8
+env:
+  global:
+    - TIMEOUT_SEC=720
+cache:
+  directories:
+    - $HOME/.m2
+install:
+  - git clone https://github.com/izgzhen/android-platforms
+script:
+  - make init
+  - make test
