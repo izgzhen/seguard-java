@@ -51,13 +51,12 @@ public class App
         config.setAbstractionDumpPath(apkPath + ".abstraction.txt");
         config.setCallGraphDumpPath(apkPath + ".callgraph.txt");
         val statManager = new StatManager(apkPath, mode);
-        val manifest = new ProcessManifest(apkPath);
 
         switch (mode) {
             case "deobfuscator":
                 JimpleRewriter.Main(androidPlatforms, javaClassPath, apkPath,
                         cmd.getOptionValue("apkclasses"), newApkPath,
-                        mode, statManager, manifest);
+                        mode, statManager, new ProcessManifest(apkPath));
                 break;
             case "core":
                 Conditions conditions = new Conditions(sourceSinkFile, config);
@@ -67,7 +66,7 @@ public class App
                     val flowGraph = new FlowGraph(conditions, statManager, dot, config);
                     SootOptionManager.Manager().buildOptionFlowGraph(
                             androidPlatforms, apkPath + ".out",
-                            apkPath, "spark", manifest);
+                            apkPath, "spark", new ProcessManifest(apkPath));
                     flowGraph.Main();
                 }
                 else if (lang.equals("js")) {

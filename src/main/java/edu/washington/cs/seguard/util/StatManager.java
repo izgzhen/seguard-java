@@ -36,6 +36,10 @@ public class StatManager {
     private String statPath;
 
     public StatManager(String apkPath, String mode) {
+        if (apkPath == null) {
+            statPath = null;
+            return;
+        }
         statPath = apkPath + "-" + mode + ".stat.json";
     }
 

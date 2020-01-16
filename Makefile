@@ -1,7 +1,8 @@
-all: quick
+JAR := target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
 
+all: $(JAR)
 
-.phony: init quick test test-resource check
+.phony: init test test-resource check
 
 check:
 	./check-jdk-version
@@ -18,7 +19,9 @@ init: check $(TEST_JAVA_CLASSES)
 	mvn -q package
 	mvn -q clean compile assembly:single
 
-quick:
+SRC_FILES := $(shell find src/ -type f -name '*.scala') $(shell find src/ -type f -name '*.java')
+
+$(JAR): $(SRC_FILES)
 	mvn -q clean compile assembly:single -o
 
 test: $(TEST_JAVA_CLASSES) quick
