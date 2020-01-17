@@ -2,6 +2,7 @@ package edu.washington.cs.seguard.js;
 
 import com.ibm.wala.cast.ir.ssa.AstGlobalRead;
 import com.ibm.wala.cast.ir.ssa.AstLexicalWrite;
+import com.ibm.wala.cast.ir.ssa.EachElementGetInstruction;
 import com.ibm.wala.cast.js.ssa.*;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
@@ -114,7 +115,8 @@ private class DataFlowDomain extends MutableMapping<Pair<Integer, Set<Integer>>>
         MutableSparseIntSet result = MutableSparseIntSet.makeEmpty();
         if (instr == null || instr.getNumberOfUses() < 1 || instr instanceof JavaScriptCheckReference
                 || instr instanceof SetPrototype || instr instanceof PrototypeLookup
-                || instr instanceof SSAConditionalBranchInstruction || instr instanceof AstLexicalWrite) {
+                || instr instanceof SSAConditionalBranchInstruction || instr instanceof AstLexicalWrite
+                || instr instanceof JavaScriptTypeOfInstruction || instr instanceof EachElementGetInstruction) {
           // do nothing
         } else if (instr instanceof SSAGetInstruction) {
           val getInstr = (SSAGetInstruction) instr;
@@ -151,6 +153,13 @@ private class DataFlowDomain extends MutableMapping<Pair<Integer, Set<Integer>>>
           val fromSet = new HashSet<Integer>();
           fromSet.add(from1);
           fromSet.add(from2);
+          val factNum = domain.add(Pair.make(to, fromSet));
+          result.add(factNum);
+        } else if (instr instanceof SSAUnaryOpInstruction) {
+          val from1 = instr.getUse(0);
+          val to = instr.getDef();
+          val fromSet = new HashSet<Integer>();
+          fromSet.add(from1);
           val factNum = domain.add(Pair.make(to, fromSet));
           result.add(factNum);
         } else {

@@ -10,7 +10,7 @@ import com.ibm.wala.cast.js.types.JavaScriptMethods
 import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
 import com.ibm.wala.ipa.callgraph.{AnalysisCacheImpl, CGNode, CallGraph}
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
-import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
+import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
 import edu.washington.cs.seguard.{BetterDot, EdgeType, NodeType}
 
 import scala.jdk.CollectionConverters._
@@ -115,6 +115,7 @@ object JSFlowGraph {
       case _:SSAConditionalBranchInstruction => None
       case _:SSANewInstruction => None
       case _:SSAGotoInstruction => None
+      case _:SSAPhiInstruction => None
       case null => None
       case _ => {
         throw new RuntimeException(instruction.toString)
