@@ -163,7 +163,8 @@ private class DataFlowDomain extends MutableMapping<Pair<Integer, Set<Integer>>>
           val factNum = domain.add(Pair.make(to, fromSet));
           result.add(factNum);
         } else {
-          throw new RuntimeException(instr.toString());
+//          throw new RuntimeException(instr.toString() + ", " + instr.getClass().toString());
+          System.out.println("Unhandled getNormalFlowFunction: " + instr.toString() + ", " + instr.getClass().toString());
         }
         result.add(d1);
         return result;

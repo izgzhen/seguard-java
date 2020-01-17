@@ -71,7 +71,9 @@ class BetterDot(dot : DotGraph, conditions: Conditions) {
     }
 
     def drawNode(name: String, nodeType: NodeType.Value) {
-        drawNode(name, nodeType, null)
+        if (name.length > 0) {
+            drawNode(name, nodeType, null)
+        }
     }
 
     def drawNode(name: String, nodeType: NodeType.Value, domain: String) {

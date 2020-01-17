@@ -2,9 +2,9 @@ package edu.washington.cs.seguard.js
 
 import java.nio.file.Paths
 
-import com.ibm.wala.cast.ir.ssa.{AstGlobalRead, AstGlobalWrite, AstLexicalRead, AstLexicalWrite}
+import com.ibm.wala.cast.ir.ssa.{AstGlobalRead, AstGlobalWrite, AstLexicalRead, AstLexicalWrite, EachElementGetInstruction}
 import com.ibm.wala.cast.js.ipa.callgraph.JSCallGraphUtil
-import com.ibm.wala.cast.js.ssa.{JavaScriptCheckReference, JavaScriptInvoke, JavaScriptPropertyRead, JavaScriptPropertyWrite, PrototypeLookup}
+import com.ibm.wala.cast.js.ssa.{JavaScriptCheckReference, JavaScriptInvoke, JavaScriptPropertyRead, JavaScriptPropertyWrite, JavaScriptTypeOfInstruction, PrototypeLookup, SetPrototype}
 import com.ibm.wala.cast.js.translator.CAstRhinoTranslatorFactory
 import com.ibm.wala.cast.js.types.JavaScriptMethods
 import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
@@ -116,9 +116,18 @@ object JSFlowGraph {
       case _:SSANewInstruction => None
       case _:SSAGotoInstruction => None
       case _:SSAPhiInstruction => None
+      case _:EachElementGetInstruction => None
+      case _:JavaScriptTypeOfInstruction => None
+      case _:SetPrototype => None
       case null => None
       case _ => {
-        throw new RuntimeException(instruction.toString)
+        if (instruction.toString(symTable).contains("putfield")) {
+          None
+        } else {
+          // throw new RuntimeException(instruction.toString + ", " + instruction.getClass.toString)
+          println("Unhandled at abstractInstruction: " + instruction.toString(symTable) + ", " + instruction.getClass.toString)
+          None
+        }
       }
     }
   }
@@ -196,7 +205,7 @@ object JSFlowGraph {
                 dot.drawEdge(v, u, EdgeType.DATAFLOW)
               }
             } else {
-              if (symTable.isConstant(use)) {
+              if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
                 var v = symTable.getConstantValue(use).toString
                 if (v.startsWith("L")) {
                   v = getMethodName(v).get
