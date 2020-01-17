@@ -2,7 +2,7 @@ package edu.washington.cs.seguard.js
 
 import java.nio.file.Paths
 
-import com.ibm.wala.cast.ir.ssa.{AstGlobalRead, AstGlobalWrite, AstLexicalWrite}
+import com.ibm.wala.cast.ir.ssa.{AstGlobalRead, AstGlobalWrite, AstLexicalRead, AstLexicalWrite}
 import com.ibm.wala.cast.js.ipa.callgraph.JSCallGraphUtil
 import com.ibm.wala.cast.js.ssa.{JavaScriptCheckReference, JavaScriptInvoke, JavaScriptPropertyRead, JavaScriptPropertyWrite, PrototypeLookup}
 import com.ibm.wala.cast.js.translator.CAstRhinoTranslatorFactory
@@ -110,6 +110,7 @@ object JSFlowGraph {
       case _:JavaScriptCheckReference => None
       case _:SSAReturnInstruction => None
       case _:AstLexicalWrite => None
+      case _:AstLexicalRead => None
       case _:PrototypeLookup => None
       case _:SSAConditionalBranchInstruction => None
       case _:SSANewInstruction => None

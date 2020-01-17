@@ -1,6 +1,7 @@
 package edu.washington.cs.seguard.js;
 
 import com.ibm.wala.cast.ir.ssa.AstGlobalRead;
+import com.ibm.wala.cast.ir.ssa.AstLexicalWrite;
 import com.ibm.wala.cast.js.ssa.*;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
@@ -113,7 +114,7 @@ private class DataFlowDomain extends MutableMapping<Pair<Integer, Set<Integer>>>
         MutableSparseIntSet result = MutableSparseIntSet.makeEmpty();
         if (instr == null || instr.getNumberOfUses() < 1 || instr instanceof JavaScriptCheckReference
                 || instr instanceof SetPrototype || instr instanceof PrototypeLookup
-                || instr instanceof SSAConditionalBranchInstruction) {
+                || instr instanceof SSAConditionalBranchInstruction || instr instanceof AstLexicalWrite) {
           // do nothing
         } else if (instr instanceof SSAGetInstruction) {
           val getInstr = (SSAGetInstruction) instr;
