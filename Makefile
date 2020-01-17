@@ -24,7 +24,7 @@ SRC_FILES := $(shell find src/ -type f -name '*.scala') $(shell find src/ -type 
 $(JAR): $(SRC_FILES)
 	mvn -q clean compile assembly:single -o
 
-test: $(TEST_JAVA_CLASSES) quick
+test: $(TEST_JAVA_CLASSES)
 	mvn -q test
 
 clean:
