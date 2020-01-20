@@ -159,7 +159,7 @@ object JSFlowGraph {
 
      -- https://sourceforge.net/p/wala/mailman/message/30369613/
      */
-
+    var last = "";
     for (bb <- superGraph.asScala) {
       if (isApplicationNode(bb.getNode)) {
         val symTable = bb.getNode.getIR.getSymbolTable
@@ -192,7 +192,10 @@ object JSFlowGraph {
           }
 
           // DefUse based analysis
-          val u = currentNode.get
+          var u = currentNode.get
+          if (u.startsWith("[get]")) {
+            u = last + "[" + u.substring(5) + "]";
+          }
           dot.drawNode(u, NodeType.STMT)
           for (iu <- 0 until instruction.getNumberOfUses) {
             val use = instruction.getUse(iu)
@@ -215,6 +218,7 @@ object JSFlowGraph {
               }
             }
           }
+          last = u;
         }
       }
     }
