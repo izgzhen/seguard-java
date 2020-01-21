@@ -137,6 +137,7 @@ public class AppTest
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/eventstream.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);
+        assertTrue(dot.getNodes().contains("process[env][npm_package_description]"));
         compareSetOfStrings("src/test/resources/eventstream.nodes.txt", dot.getNodes());
         compareSetOfStrings("src/test/resources/eventstream.edges.txt", dot.getEdgesWithType());
     }
