@@ -157,8 +157,6 @@ object JSFlowGraph {
         aliasMap.put(n.toString, localAliasMap);
       }
     }
-    println("=============== Alias Map ===============")
-    println(aliasMap)
 
     /*
 
@@ -209,12 +207,9 @@ object JSFlowGraph {
           if (!globalVarMap.contains(namespace)) {
             globalVarMap.put(namespace, new HashMap());
           }
-          val instrStr = instruction.toString(symTable);
-          println(instrStr)
           if (instruction.isInstanceOf[AstGlobalRead]) { // global variable
             val key = instruction.getDef();
             globalVarMap(namespace).put(key, u)
-            println(key + " -> " + u)
           } else if (instruction.isInstanceOf[SSAGetInstruction]) {
             val idx = aliasMap(namespace)(instruction.asInstanceOf[SSAGetInstruction].getRef())
             u = globalVarMap(namespace)(idx) + "[" + instruction.asInstanceOf[SSAGetInstruction].getDeclaredField.getName.toString + "]";
