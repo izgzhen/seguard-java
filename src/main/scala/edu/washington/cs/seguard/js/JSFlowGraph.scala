@@ -133,7 +133,6 @@ object JSFlowGraph {
       }
     }
   }
-  def manOf[T: Manifest](t: T): Manifest[T] = manifest[T]
 
   def addDataFlowGraph(dot: BetterDot, cg: CallGraph) {
     val icfg = ExplodedInterproceduralCFG.make(cg)
