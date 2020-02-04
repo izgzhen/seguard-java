@@ -13,6 +13,8 @@ import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
 import edu.washington.cs.seguard.{BetterDot, EdgeType, NodeType}
 
+import scala.collection.mutable
+import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters._
 
 object JSFlowGraph {
@@ -131,20 +133,47 @@ object JSFlowGraph {
       }
     }
   }
+  def manOf[T: Manifest](t: T): Manifest[T] = manifest[T]
 
   def addDataFlowGraph(dot: BetterDot, cg: CallGraph) {
     val icfg = ExplodedInterproceduralCFG.make(cg)
     val dataflow = new DataFlow(icfg)
     val results = dataflow.analyze()
     val superGraph = dataflow.getSupergraph
+    val aliasMap: HashMap[String, HashMap[Int, Int]] = new HashMap();
+    var globalVarMap: HashMap[String, HashMap[Int, String]] = new HashMap();
 
     for (n <- superGraph.getProcedureGraph.asScala) {
       if (isApplicationNode(n)) {
+        var localAliasMap: HashMap[Int, Int] = new HashMap()
         println("====== Method " + n + " =======")
         println(n.getIR)
         println("===============================")
+        val cfg = n.getIR.getControlFlowGraph
+        val instructions = n.getIR().getInstructions();
+        val symbolTable = n.getIR().getSymbolTable();
+        for (i <- 0 to cfg.getMaxNumber) {
+          val bb = cfg.getNode(i)
+          val start = bb.getFirstInstructionIndex
+          val end = bb.getLastInstructionIndex
+          for (j <- start to end) {
+//            try {
+            if (instructions(j) != null) {
+              val instrStr = instructions(j).toString(symbolTable)
+              if (instrStr.startsWith("v") && instrStr.contains("prototype_values")) {
+                val key = instrStr.substring(1, instrStr.indexOf(" ")).toInt
+                val value = instrStr.substring(instrStr.lastIndexOf("(") + 2, instrStr.lastIndexOf(")")).toInt;
+                localAliasMap.put(key, value)
+                println();
+              }
+            }
+          }
+        }
+        aliasMap.put(n.toString, localAliasMap);
       }
     }
+    println("=============== Alias Map ===============")
+    println(aliasMap)
 
     /*
 
@@ -159,7 +188,6 @@ object JSFlowGraph {
 
      -- https://sourceforge.net/p/wala/mailman/message/30369613/
      */
-    var last = "";
     for (bb <- superGraph.asScala) {
       if (isApplicationNode(bb.getNode)) {
         val symTable = bb.getNode.getIR.getSymbolTable
@@ -169,7 +197,6 @@ object JSFlowGraph {
         if (currentNode.isDefined) {
           println("======= Instruction of BB " + bb.getDelegate.getNumber + " of method " + bb.getNode + "==============")
           println(instruction, instruction.toString(symTable))
-
           // DFA based analysis
           // FIXME
           val solution = results.getResult(bb)
@@ -193,8 +220,30 @@ object JSFlowGraph {
 
           // DefUse based analysis
           var u = currentNode.get
-          if (u.startsWith("[get]")) {
-            u = last + "[" + u.substring(5) + "]";
+          val namespace = bb.getNode.toString
+          if (!globalVarMap.contains(namespace)) {
+            globalVarMap.put(namespace, new HashMap());
+          }
+          println("u = " + u)
+          val instrStr = instruction.toString(symTable);
+          println(instrStr)
+          if (instrStr.startsWith("v") && instrStr.contains("global:global")) {
+//            if (instruction.isInstanceOf())
+            val key = instrStr.substring(1, instrStr.indexOf(" ")).toInt
+            globalVarMap(namespace).put(key, u)
+            println(key + " -> " + u)
+          } else if (u.startsWith("[get]")) {
+            try {
+              val idx = aliasMap(namespace)(instrStr.substring(instrStr.lastIndexOf(" ") + 2).toInt)
+              println(globalVarMap.keySet)
+              u = globalVarMap(namespace)(idx) + "[" + u.substring(5) + "]";
+              println("u = " + u)
+              globalVarMap(namespace).put(instrStr.substring(1, instrStr.indexOf(" ")).toInt, u)
+            } catch {
+              case e: Exception => {
+                println(e)
+              }
+            }
           }
           dot.drawNode(u, NodeType.STMT)
           for (iu <- 0 until instruction.getNumberOfUses) {
@@ -218,7 +267,6 @@ object JSFlowGraph {
               }
             }
           }
-          last = u;
         }
       }
     }
