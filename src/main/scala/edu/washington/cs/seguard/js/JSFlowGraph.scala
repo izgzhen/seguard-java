@@ -149,24 +149,9 @@ object JSFlowGraph {
         println("====== Method " + n + " =======")
         println(n.getIR)
         println("===============================")
-        val cfg = n.getIR.getControlFlowGraph
-        val instructions = n.getIR().getInstructions();
-        val symbolTable = n.getIR().getSymbolTable();
-        for (i <- 0 to cfg.getMaxNumber) {
-          val bb = cfg.getNode(i)
-          val start = bb.getFirstInstructionIndex
-          val end = bb.getLastInstructionIndex
-          for (j <- start to end) {
-//            try {
-            if (instructions(j) != null) {
-              val instrStr = instructions(j).toString(symbolTable)
-              if (instrStr.startsWith("v") && instrStr.contains("prototype_values")) {
-                val key = instrStr.substring(1, instrStr.indexOf(" ")).toInt
-                val value = instrStr.substring(instrStr.lastIndexOf("(") + 2, instrStr.lastIndexOf(")")).toInt;
-                localAliasMap.put(key, value)
-                println();
-              }
-            }
+        for (instruction <- n.getIR().getInstructions()) {
+          if (instruction != null && instruction.isInstanceOf[PrototypeLookup]) {
+            localAliasMap.put(instruction.getDef(0), instruction.getUse(0))
           }
         }
         aliasMap.put(n.toString, localAliasMap);
@@ -224,26 +209,16 @@ object JSFlowGraph {
           if (!globalVarMap.contains(namespace)) {
             globalVarMap.put(namespace, new HashMap());
           }
-          println("u = " + u)
           val instrStr = instruction.toString(symTable);
           println(instrStr)
-          if (instrStr.startsWith("v") && instrStr.contains("global:global")) {
-//            if (instruction.isInstanceOf())
-            val key = instrStr.substring(1, instrStr.indexOf(" ")).toInt
+          if (instruction.isInstanceOf[AstGlobalRead]) { // global variable
+            val key = instruction.getDef();
             globalVarMap(namespace).put(key, u)
             println(key + " -> " + u)
-          } else if (u.startsWith("[get]")) {
-            try {
-              val idx = aliasMap(namespace)(instrStr.substring(instrStr.lastIndexOf(" ") + 2).toInt)
-              println(globalVarMap.keySet)
-              u = globalVarMap(namespace)(idx) + "[" + u.substring(5) + "]";
-              println("u = " + u)
-              globalVarMap(namespace).put(instrStr.substring(1, instrStr.indexOf(" ")).toInt, u)
-            } catch {
-              case e: Exception => {
-                println(e)
-              }
-            }
+          } else if (instruction.isInstanceOf[SSAGetInstruction]) {
+            val idx = aliasMap(namespace)(instruction.asInstanceOf[SSAGetInstruction].getRef())
+            u = globalVarMap(namespace)(idx) + "[" + instruction.asInstanceOf[SSAGetInstruction].getDeclaredField.getName.toString + "]";
+            globalVarMap(namespace).put(instruction.getDef(), u)
           }
           dot.drawNode(u, NodeType.STMT)
           for (iu <- 0 until instruction.getNumberOfUses) {

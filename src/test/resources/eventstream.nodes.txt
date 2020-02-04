@@ -1,46 +1,48 @@
 _compile([get]constructor(), decoded, )
 npm_package_description
-[get]constructor
-[get]npm_package_description
-[const]createDecipher
 exports(f)
 decode
-$$undefined
 update(createDecipher(require(crypto), aes256, npm_package_description), hex, utf8)
+e()(f, a, )
+[const]update
+[const]_compile
+require(crypto)
+add
+Buffer
+[const]crypto
+decode(2e2f746573742f64617461)
+[get]constructor()
+module
+e()
+final(createDecipher(require(crypto), aes256, npm_package_description), utf8)
+require
+module[paths]
+Leventstream.js
+[const]utf8
+[const]exports
+[const]toString
+[get]constructor
+[const]createDecipher
+$$undefined
+process[env]
 exports([get]constructor())
 [const]from
 [get]paths
 createDecipher(require(crypto), aes256, npm_package_description)
-e()(f, a, )
-[const]update
-[const]_compile
 [const]2e2f746573742f64617461
 decoded
-require(crypto)
-[get]env
-add
-Buffer
-[const]crypto
 a
-decode(2e2f746573742f64617461)
-[get]constructor()
 process
 [const]
 e
 f
-module
-e()
-final(createDecipher(require(crypto), aes256, npm_package_description), utf8)
 [const]decode
 decode()
-require
+process[env][npm_package_description]
 [const]hex
 [const]aes256
+module[constructor]
 toString(from(Buffer, hex))
 from(Buffer, hex)
 [const]final
-Leventstream.js
-[const]utf8
 require(decode(2e2f746573742f64617461))
-[const]exports
-[const]toString
