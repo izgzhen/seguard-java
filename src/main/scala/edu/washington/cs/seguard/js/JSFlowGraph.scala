@@ -7,7 +7,7 @@ import com.ibm.wala.cast.js.ipa.callgraph.JSCallGraphUtil
 import com.ibm.wala.cast.js.ssa.{JavaScriptCheckReference, JavaScriptInvoke, JavaScriptPropertyRead, JavaScriptPropertyWrite, JavaScriptTypeOfInstruction, PrototypeLookup, SetPrototype}
 import com.ibm.wala.cast.js.translator.CAstRhinoTranslatorFactory
 import com.ibm.wala.cast.js.types.JavaScriptMethods
-import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
+import com.ibm.wala.examples.analysis.js.{ContextSensitiveReachingDefs, JSCallGraphBuilderUtil}
 import com.ibm.wala.ipa.callgraph.{AnalysisCacheImpl, CGNode, CallGraph}
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
@@ -134,7 +134,7 @@ object JSFlowGraph {
 
   def addDataFlowGraph(dot: BetterDot, cg: CallGraph) {
     val icfg = ExplodedInterproceduralCFG.make(cg)
-    val dataflow = new DataFlow(icfg)
+    val dataflow = new IFDSDataFlow(icfg)
     val results = dataflow.analyze()
     val superGraph = dataflow.getSupergraph
 
