@@ -122,7 +122,7 @@ public class AppTest
     }
 
     @Test
-    public void testJS1() throws IOException {
+    public void testExampleJS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example.js");
@@ -132,7 +132,7 @@ public class AppTest
     }
 
     @Test
-    public void testJS2() throws IOException {
+    public void testEventStreamJS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/eventstream.js");
@@ -142,7 +142,7 @@ public class AppTest
     }
 
     @Test
-    public void testJS3() throws IOException {
+    public void testExample2JS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example2.js");

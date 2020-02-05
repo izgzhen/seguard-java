@@ -7,8 +7,8 @@ import com.ibm.wala.cast.js.ipa.callgraph.JSCallGraphUtil
 import com.ibm.wala.cast.js.ssa.{JavaScriptCheckReference, JavaScriptInvoke, JavaScriptPropertyRead, JavaScriptPropertyWrite, JavaScriptTypeOfInstruction, PrototypeLookup, SetPrototype}
 import com.ibm.wala.cast.js.translator.CAstRhinoTranslatorFactory
 import com.ibm.wala.cast.js.types.JavaScriptMethods
-import com.ibm.wala.examples.analysis.js.{ContextSensitiveReachingDefs, JSCallGraphBuilderUtil}
-import com.ibm.wala.ipa.callgraph.{AnalysisCacheImpl, CGNode, CallGraph}
+import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
+import com.ibm.wala.ipa.callgraph.{CGNode, CallGraph}
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
 import edu.washington.cs.seguard.{BetterDot, EdgeType, NodeType}
@@ -55,6 +55,13 @@ object JSFlowGraph {
       m.getMethod.getReference != JavaScriptMethods.ctorReference
   }
 
+  /**
+   * From SSA identifier to abstract node
+   * @param defUse
+   * @param symbolTable
+   * @param i SSA identifier
+   * @return
+   */
   def getDef(defUse: DefUse, symbolTable: SymbolTable, i: Int): Option[String] = {
     defUse.getDef(i) match {
       case null =>
@@ -78,6 +85,13 @@ object JSFlowGraph {
     point to global context
 
   -- https://sourceforge.net/p/wala/mailman/message/32491808/
+   */
+  /**
+   * Get abstract node for a [[SSAInstruction]]
+   * @param defUse
+   * @param symTable
+   * @param instruction
+   * @return
    */
   def abstractInstruction(defUse: DefUse, symTable: SymbolTable, instruction: SSAInstruction): Option[String] = {
     instruction match {
@@ -133,6 +147,7 @@ object JSFlowGraph {
   }
 
   def addDataFlowGraph(dot: BetterDot, cg: CallGraph) {
+    // IFDS based data-flow analysis
     val icfg = ExplodedInterproceduralCFG.make(cg)
     val dataflow = new IFDSDataFlow(icfg)
     val results = dataflow.analyze()
@@ -160,29 +175,32 @@ object JSFlowGraph {
      -- https://sourceforge.net/p/wala/mailman/message/30369613/
      */
 
-    for (bb <- superGraph.asScala) {
-      if (isApplicationNode(bb.getNode)) {
-        val symTable = bb.getNode.getIR.getSymbolTable
-        val instruction = bb.getDelegate.getInstruction
-        val currentNode: Option[String] = abstractInstruction(bb.getNode.getDU, symTable, instruction)
+    // For each node in the super graph (Exploded CFG)
+    for (node <- superGraph.asScala) {
+      if (isApplicationNode(node.getNode)) {
+        val symTable = node.getNode.getIR.getSymbolTable
+        // Each node corresponds to a _single_ instruction
+        val instruction = node.getDelegate.getInstruction
+        if (instruction != null) {
 
-        if (currentNode.isDefined) {
-          println("======= Instruction of BB " + bb.getDelegate.getNumber + " of method " + bb.getNode + "==============")
+          println("======= Instruction of BB " + node.getDelegate.getNumber + " of method " + node.getNode + "==============")
           println(instruction, instruction.toString(symTable))
 
-          // DFA based analysis
-          // FIXME
-          val solution = results.getResult(bb)
+          // solution is a set of fact nums
+          val solution = results.getResult(node)
           val iter = solution.intIterator
+          // process each fact at current node
           while (iter.hasNext) {
-            val next = iter.next()
-            val absValues = dataflow.getDomain.getMappedObject(next)
-            println("== Dataflow " + next + ": " + absValues)
+            val fact = iter.next()
+            // fact remapped back to abstract domain: a pair of (dependent: Int, dependencies: Set[Int])
+            // each value is an Int due to SSA construction
+            val absValues = dataflow.getDomain.getMappedObject(fact)
+            println("== Dataflow " + fact + ": " + absValues)
             val to = absValues.fst
             val fromValues = absValues.snd
             for (from <- fromValues.asScala) {
-              val fromValue = getDef(bb.getNode.getDU, symTable, from)
-              val toValue = getDef(bb.getNode.getDU, symTable, to)
+              val fromValue = getDef(node.getNode.getDU, symTable, from)
+              val toValue = getDef(node.getNode.getDU, symTable, to)
               if (fromValue.isDefined && toValue.isDefined) {
                 dot.drawNode(fromValue.get, NodeType.EXPR)
                 dot.drawNode(toValue.get, NodeType.EXPR)
@@ -191,29 +209,33 @@ object JSFlowGraph {
             }
           }
 
-          // DefUse based analysis
-          val u = currentNode.get
-          dot.drawNode(u, NodeType.STMT)
-          for (iu <- 0 until instruction.getNumberOfUses) {
-            val use = instruction.getUse(iu)
-            val defined = bb.getNode.getDU.getDef(use)
-            if (defined != null) {
-              val defineNode = abstractInstruction(bb.getNode.getDU, symTable, defined)
-              if (defineNode.isDefined) {
-                val v = defineNode.get
-                dot.drawNode(v, NodeType.STMT)
-                dot.drawEdge(v, u, EdgeType.DATAFLOW)
-              }
-            } else {
-              if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
-                var v = symTable.getConstantValue(use).toString
-                if (v.startsWith("L")) {
-                  v = getMethodName(v).get
+          abstractInstruction(node.getNode.getDU, symTable, instruction) match {
+            case Some(u) => {
+              // DefUse based analysis
+              dot.drawNode(u, NodeType.STMT)
+              for (iu <- 0 until instruction.getNumberOfUses) {
+                val use = instruction.getUse(iu)
+                val defined = node.getNode.getDU.getDef(use)
+                if (defined != null) {
+                  val defineNode = abstractInstruction(node.getNode.getDU, symTable, defined)
+                  if (defineNode.isDefined) {
+                    val v = defineNode.get
+                    dot.drawNode(v, NodeType.STMT)
+                    dot.drawEdge(v, u, EdgeType.DATAFLOW)
+                  }
+                } else {
+                  if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
+                    var v = symTable.getConstantValue(use).toString
+                    if (v.startsWith("L")) {
+                      v = getMethodName(v).get
+                    }
+                    dot.drawNode("[const]" + v, NodeType.CONSTANT)
+                    dot.drawEdge(v, u, EdgeType.DATAFLOW)
+                  }
                 }
-                dot.drawNode("[const]" + v, NodeType.CONSTANT)
-                dot.drawEdge(v, u, EdgeType.DATAFLOW)
               }
             }
+            case _ =>
           }
         }
       }
