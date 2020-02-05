@@ -152,6 +152,16 @@ public class AppTest
     }
 
     @Test
+    public void testExample3JS() throws IOException {
+        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
+        val dot = new BetterDot(new DotGraph(""), conditions);
+        val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example3.js");
+        JSFlowGraph.addDataFlowGraph(dot, cg);
+        compareSetOfStrings("src/test/resources/example3.nodes.txt", dot.getNodes());
+        compareSetOfStrings("src/test/resources/example3.edges.txt", dot.getEdgesWithType());
+    }
+
+    @Test
     public void testAndroidAPI() {
         System.out.println(new String(Base64.decode("aHR0cDovL3poZWthcHR5LmNvbQ==", 0)));
     }
