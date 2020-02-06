@@ -247,7 +247,20 @@ object JSFlowGraph {
           abstractInstruction(node.getNode.getDU, symTable, instruction) match {
             case Some(u) => {
               // DefUse based analysis
-              dot.drawNode(u, NodeType.STMT)
+              var u_complete = u
+              val namespace = node.getNode.toString // name of the function where these variables are defined
+              if (!globalVarMap.contains(namespace)) {
+                globalVarMap.put(namespace, new HashMap());
+              }
+              if (instruction.isInstanceOf[AstGlobalRead]) { // global variable
+                val key = instruction.getDef();
+                globalVarMap(namespace).put(key, u_complete)
+              } else if (instruction.isInstanceOf[SSAGetInstruction]) {
+                val idx = aliasMap(namespace)(instruction.asInstanceOf[SSAGetInstruction].getRef())
+                u_complete = globalVarMap(namespace)(idx) + "[" + instruction.asInstanceOf[SSAGetInstruction].getDeclaredField.getName.toString + "]";
+                globalVarMap(namespace).put(instruction.getDef(), u_complete)
+              }
+              dot.drawNode(u_complete, NodeType.STMT)
               for (iu <- 0 until instruction.getNumberOfUses) {
                 val use = instruction.getUse(iu)
                 val defined = node.getNode.getDU.getDef(use)
@@ -256,7 +269,7 @@ object JSFlowGraph {
                   if (defineNode.isDefined) {
                     val v = defineNode.get
                     dot.drawNode(v, NodeType.STMT)
-                    dot.drawEdge(v, u, EdgeType.DATAFLOW)
+                    dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
                   }
                 } else {
                   if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
@@ -265,42 +278,9 @@ object JSFlowGraph {
                       v = getMethodName(v).get
                     }
                     dot.drawNode("[const]" + v, NodeType.CONSTANT)
-                    dot.drawEdge(v, u, EdgeType.DATAFLOW)
+                    dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
                   }
                 }
-          // DefUse based analysis
-          var u = currentNode.get
-          val namespace = bb.getNode.toString // name of the function where these variables are defined
-          if (!globalVarMap.contains(namespace)) {
-            globalVarMap.put(namespace, new HashMap());
-          }
-          if (instruction.isInstanceOf[AstGlobalRead]) { // global variable
-            val key = instruction.getDef();
-            globalVarMap(namespace).put(key, u)
-          } else if (instruction.isInstanceOf[SSAGetInstruction]) {
-            val idx = aliasMap(namespace)(instruction.asInstanceOf[SSAGetInstruction].getRef())
-            u = globalVarMap(namespace)(idx) + "[" + instruction.asInstanceOf[SSAGetInstruction].getDeclaredField.getName.toString + "]";
-            globalVarMap(namespace).put(instruction.getDef(), u)
-          }
-          dot.drawNode(u, NodeType.STMT)
-          for (iu <- 0 until instruction.getNumberOfUses) {
-            val use = instruction.getUse(iu)
-            val defined = bb.getNode.getDU.getDef(use)
-            if (defined != null) {
-              val defineNode = abstractInstruction(bb.getNode.getDU, symTable, defined)
-              if (defineNode.isDefined) {
-                val v = defineNode.get
-                dot.drawNode(v, NodeType.STMT)
-                dot.drawEdge(v, u, EdgeType.DATAFLOW)
-              }
-            } else {
-              if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
-                var v = symTable.getConstantValue(use).toString
-                if (v.startsWith("L")) {
-                  v = getMethodName(v).get
-                }
-                dot.drawNode("[const]" + v, NodeType.CONSTANT)
-                dot.drawEdge(v, u, EdgeType.DATAFLOW)
               }
             }
             case _ =>
@@ -310,3 +290,38 @@ object JSFlowGraph {
     }
   }
 }
+//          // DefUse based analysis
+//          var u = currentNode.get
+//          val namespace = bb.getNode.toString // name of the function where these variables are defined
+//          if (!globalVarMap.contains(namespace)) {
+//            globalVarMap.put(namespace, new HashMap());
+//          }
+//          if (instruction.isInstanceOf[AstGlobalRead]) { // global variable
+//            val key = instruction.getDef();
+//            globalVarMap(namespace).put(key, u)
+//          } else if (instruction.isInstanceOf[SSAGetInstruction]) {
+//            val idx = aliasMap(namespace)(instruction.asInstanceOf[SSAGetInstruction].getRef())
+//            u = globalVarMap(namespace)(idx) + "[" + instruction.asInstanceOf[SSAGetInstruction].getDeclaredField.getName.toString + "]";
+//            globalVarMap(namespace).put(instruction.getDef(), u)
+//          }
+//          dot.drawNode(u, NodeType.STMT)
+//          for (iu <- 0 until instruction.getNumberOfUses) {
+//            val use = instruction.getUse(iu)
+//            val defined = bb.getNode.getDU.getDef(use)
+//            if (defined != null) {
+//              val defineNode = abstractInstruction(bb.getNode.getDU, symTable, defined)
+//              if (defineNode.isDefined) {
+//                val v = defineNode.get
+//                dot.drawNode(v, NodeType.STMT)
+//                dot.drawEdge(v, u, EdgeType.DATAFLOW)
+//              }
+//            } else {
+//              if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
+//                var v = symTable.getConstantValue(use).toString
+//                if (v.startsWith("L")) {
+//                  v = getMethodName(v).get
+//                }
+//                dot.drawNode("[const]" + v, NodeType.CONSTANT)
+//                dot.drawEdge(v, u, EdgeType.DATAFLOW)
+//              }
+//            }
