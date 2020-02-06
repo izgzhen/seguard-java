@@ -158,6 +158,12 @@ public class AppTest
         compareSetOfStrings("src/test/resources/example.edges.txt", dot.getEdgesWithType());
     }
 
+    /**
+     * See https://github.com/semantic-graph/seguard-java/issues/2 for some related issue
+     * FIXME: The current edges list is not perfect since the new object-access-path based node is not connected to other
+     *        nodes. It should be able to find their replacements.
+     * @throws IOException
+     */
     @Test
     public void testEventStreamJS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
@@ -182,7 +188,7 @@ public class AppTest
     }
 
     @Test
-    public void testExample3JS() throws IOException, InterruptedException {
+    public void testExample3JS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val jsPath = "src/test/resources/example3.js";

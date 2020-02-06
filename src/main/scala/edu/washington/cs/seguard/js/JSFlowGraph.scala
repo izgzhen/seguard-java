@@ -275,7 +275,8 @@ object JSFlowGraph {
                 globalVarMap(namespace).put(instruction.getDef(), u_complete)
               }
               dot.drawNode(u_complete, NodeType.STMT)
-              for (iu <- 0 until instruction.getNumberOfUses) {
+              var iu = 0
+              while (iu < instruction.getNumberOfUses) {
                 val use = instruction.getUse(iu)
                 val defined = node.getNode.getDU.getDef(use)
                 if (defined != null) {
@@ -295,6 +296,7 @@ object JSFlowGraph {
                     dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
                   }
                 }
+                iu += 1
               }
             }
             case _ =>
