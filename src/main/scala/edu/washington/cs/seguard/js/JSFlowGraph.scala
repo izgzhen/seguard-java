@@ -15,6 +15,8 @@ import com.ibm.wala.ipa.cha.IClassHierarchy
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
 import edu.washington.cs.seguard.{BetterDot, EdgeType, NodeType}
 
+import scala.collection.mutable
+import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters._
 
 object JSFlowGraph {
@@ -175,12 +177,22 @@ object JSFlowGraph {
     val dataflow = new IFDSDataFlow(icfg)
     val results = dataflow.analyze()
     val superGraph = dataflow.getSupergraph
+    val aliasMap: HashMap[String, HashMap[Int, Int]] = new HashMap();
+    val globalVarMap: HashMap[String, HashMap[Int, String]] = new HashMap();
 
     for (n <- superGraph.getProcedureGraph.asScala) {
       if (isApplicationNode(n)) {
+        var localAliasMap: HashMap[Int, Int] = new HashMap()
         println("====== Method " + n + " =======")
         println(n.getIR)
         println("===============================")
+        // The IR we used here is in SSA form
+        for (instruction <- n.getIR().getInstructions()) {
+          if (instruction != null && instruction.isInstanceOf[PrototypeLookup]) {
+            localAliasMap.put(instruction.getDef(0), instruction.getUse(0))
+          }
+        }
+        aliasMap.put(n.toString, localAliasMap);
       }
     }
 
@@ -235,7 +247,20 @@ object JSFlowGraph {
           abstractInstruction(node.getNode.getDU, symTable, instruction) match {
             case Some(u) => {
               // DefUse based analysis
-              dot.drawNode(u, NodeType.STMT)
+              var u_complete = u
+              val namespace = node.getNode.toString // name of the function where these variables are defined
+              if (!globalVarMap.contains(namespace)) {
+                globalVarMap.put(namespace, new HashMap());
+              }
+              if (instruction.isInstanceOf[AstGlobalRead]) { // global variable
+                val key = instruction.getDef();
+                globalVarMap(namespace).put(key, u_complete)
+              } else if (instruction.isInstanceOf[SSAGetInstruction]) {
+                val idx = aliasMap(namespace)(instruction.asInstanceOf[SSAGetInstruction].getRef())
+                u_complete = globalVarMap(namespace)(idx) + "[" + instruction.asInstanceOf[SSAGetInstruction].getDeclaredField.getName.toString + "]";
+                globalVarMap(namespace).put(instruction.getDef(), u_complete)
+              }
+              dot.drawNode(u_complete, NodeType.STMT)
               for (iu <- 0 until instruction.getNumberOfUses) {
                 val use = instruction.getUse(iu)
                 val defined = node.getNode.getDU.getDef(use)
@@ -244,7 +269,7 @@ object JSFlowGraph {
                   if (defineNode.isDefined) {
                     val v = defineNode.get
                     dot.drawNode(v, NodeType.STMT)
-                    dot.drawEdge(v, u, EdgeType.DATAFLOW)
+                    dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
                   }
                 } else {
                   if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
@@ -253,7 +278,7 @@ object JSFlowGraph {
                       v = getMethodName(v).get
                     }
                     dot.drawNode("[const]" + v, NodeType.CONSTANT)
-                    dot.drawEdge(v, u, EdgeType.DATAFLOW)
+                    dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
                   }
                 }
               }
