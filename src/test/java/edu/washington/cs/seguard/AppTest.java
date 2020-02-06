@@ -155,21 +155,6 @@ public class AppTest
     }
 
     @Test
-    public void testJS4() throws IOException {
-        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new DotGraph(""), conditions);
-        val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/test.js");
-        JSFlowGraph.addDataFlowGraph(dot, cg);
-        System.out.println("==================testJS4===============");
-        System.out.println(dot.getNodes());
-        System.out.println("================== Edges ===============");
-        System.out.println(dot.getEdges());
-        assertTrue(dot.getNodes().contains("process[env][npm_package_description]"));
-        compareSetOfStrings("src/test/resources/eventstream.nodes.txt", dot.getNodes());
-        compareSetOfStrings("src/test/resources/eventstream.edges.txt", dot.getEdgesWithType());
-    }
-
-    @Test
     public void testAndroidAPI() {
         System.out.println(new String(Base64.decode("aHR0cDovL3poZWthcHR5LmNvbQ==", 0)));
     }

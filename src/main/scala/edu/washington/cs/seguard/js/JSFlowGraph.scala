@@ -140,7 +140,7 @@ object JSFlowGraph {
     val results = dataflow.analyze()
     val superGraph = dataflow.getSupergraph
     val aliasMap: HashMap[String, HashMap[Int, Int]] = new HashMap();
-    var globalVarMap: HashMap[String, HashMap[Int, String]] = new HashMap();
+    val globalVarMap: HashMap[String, HashMap[Int, String]] = new HashMap();
 
     for (n <- superGraph.getProcedureGraph.asScala) {
       if (isApplicationNode(n)) {
@@ -148,6 +148,7 @@ object JSFlowGraph {
         println("====== Method " + n + " =======")
         println(n.getIR)
         println("===============================")
+        // The IR we used here is in SSA form
         for (instruction <- n.getIR().getInstructions()) {
           if (instruction != null && instruction.isInstanceOf[PrototypeLookup]) {
             localAliasMap.put(instruction.getDef(0), instruction.getUse(0))
@@ -202,7 +203,7 @@ object JSFlowGraph {
 
           // DefUse based analysis
           var u = currentNode.get
-          val namespace = bb.getNode.toString
+          val namespace = bb.getNode.toString // name of the function where these variables are defined
           if (!globalVarMap.contains(namespace)) {
             globalVarMap.put(namespace, new HashMap());
           }
