@@ -10,5 +10,5 @@ make
 tmpfile=$(mktemp /tmp/abc-script.XXXXXX)
 tmpfile2=$(mktemp /tmp/abc-script.XXXXXX)
 java -jar $JAR --lang js --js $jspath --mode entrypoints --sourceSinkFile SourcesAndSinksJS.txt --outputPath $tmpfile
-cat $tmpfile $jspath > $tmpfile2
+cat $jspath $tmpfile > $tmpfile2
 java -jar $JAR --lang js --js $tmpfile2 --mode core --sourceSinkFile SourcesAndSinksJS.txt --outputPath $jspath.seguardjs.dot
