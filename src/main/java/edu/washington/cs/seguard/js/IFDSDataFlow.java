@@ -28,13 +28,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class DataFlow {
+public class IFDSDataFlow {
   private final IClassHierarchy cha;
   private final ExplodedInterproceduralCFG icfg;
   private final ISupergraph<BasicBlockInContext<IExplodedBasicBlock>, CGNode> supergraph;
   private final DataFlowDomain domain = new DataFlowDomain();
 
-  public DataFlow(ExplodedInterproceduralCFG icfg) {
+  public IFDSDataFlow(ExplodedInterproceduralCFG icfg) {
     this.cha = icfg.getCallGraph().getClassHierarchy();
     this.icfg = icfg;
     this.supergraph = ICFGSupergraph.make(icfg.getCallGraph());

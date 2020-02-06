@@ -1,3 +1,6 @@
 1.0-[DATAFLOW]->add
-2.0-[DATAFLOW]->add
 add-[DATAFLOW]->add
+console-[DATAFLOW]->log(console, add)
+add-[DATAFLOW]->log(console, add)
+log-[DATAFLOW]->log(console, add)
+2.0-[DATAFLOW]->add

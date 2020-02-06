@@ -1,0 +1,27 @@
+[const]sfdx 
+require(child_process)
+$$undefined
+$SfdxUtils$()
+undefined
+Lnew-example3.js
+[const]child_process
+[const]$SfdxUtils$execSfdx$
+[const]$SfdxUtils$
+ --targetusername 
+toString(execSync(add))
+$SfdxUtils$()()
+execSfdx($SfdxUtils$())
+[const]undefined
+sfdx 
+add
+$SfdxUtils$
+$SfdxUtils$execSfdx$
+require
+execSfdx
+$SfdxUtils$execSfdx$()
+execSync(add)
+[const]execSfdx
+[const] --targetusername 
+ne
+[const]execSync
+[const]toString

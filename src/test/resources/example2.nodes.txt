@@ -1,5 +1,9 @@
 add
+console
+[const]log
 [const]2.0
 [const]1.0
 1.0
+2.0
+log(console, add)
 $$undefined

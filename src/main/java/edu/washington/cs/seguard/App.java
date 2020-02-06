@@ -20,12 +20,12 @@ public class App
     public static void main(String[] args) throws Exception
     {
         Options options = new Options();
-        options.addOption(Option.builder().argName("mode").hasArg().longOpt("mode").desc("mode: deobfuscator, core").build());
+        options.addOption(Option.builder().argName("mode").hasArg().longOpt("mode").desc("mode: deobfuscator, core, entrypoints").build());
         options.addOption(Option.builder().argName("lang").hasArg().longOpt("lang").desc("lang: java, js").build());
         options.addOption(Option.builder().argName("apk").hasArg().longOpt("apk").desc("apk path").build());
         options.addOption(Option.builder().argName("js").hasArg().longOpt("js").desc("JS path").build());
         options.addOption(Option.builder().argName("newApk").hasArg().longOpt("newApk").desc("new apk path").build());
-        options.addOption(Option.builder().argName("dotPath").hasArg().longOpt("dotPath").desc("dot path").build());
+        options.addOption(Option.builder().argName("outputPath").hasArg().longOpt("outputPath").desc("output path").build());
         options.addOption(Option.builder().argName("apkclasses").hasArg().longOpt("apkclasses").desc("apk classes file path").build());
         options.addOption(Option.builder().argName("java").hasArg().longOpt("java").desc("java path").build());
         options.addOption("d", false, "Turn on debug which will" +
@@ -43,7 +43,7 @@ public class App
         String newApkPath = cmd.getOptionValue("newApk");
         String mode = cmd.getOptionValue("mode");
         String lang = cmd.getOptionValue("lang");
-        String dotPath = cmd.getOptionValue("dotPath");
+        String outputPath = cmd.getOptionValue("outputPath");
         String sourceSinkFile = cmd.getOptionValue("sourceSinkFile");
         String androidPlatforms = cmd.getOptionValue("android");
         val config = Config.load("../config.yaml"); // FIXME: pass in through parameters
@@ -73,8 +73,12 @@ public class App
                     val cg = JSFlowGraph.addCallGraph(dot, jsPath);
                     JSFlowGraph.addDataFlowGraph(dot, cg);
                 }
-                System.out.println("Generating CallGraph dot file at " + dotPath);
-                dot.plot(dotPath);
+                System.out.println("Generating CallGraph dot file at " + outputPath);
+                dot.plot(outputPath);
+                break;
+            case "entrypoints":
+                assert lang.equals("js");
+                JSFlowGraph.getAllMethods(jsPath, outputPath);
                 break;
             default:
                 throw new RuntimeException("Unsupported mode: " + mode);

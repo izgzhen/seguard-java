@@ -3,7 +3,12 @@ package edu.washington.cs.seguard;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 
 import android.util.Base64;
@@ -121,8 +126,30 @@ public class AppTest
         assertEquals(msg, expected, actual);
     }
 
+    /* Transfer chars from source to destination in efficient chunks */
+    private static final void transfer(final Reader source, final Writer destination) throws IOException {
+        char[] buffer = new char[1024 * 16];
+        int len = 0;
+        while ((len = source.read(buffer)) >= 0) {
+            destination.write(buffer, 0, len);
+        }
+    }
+
+    public void mergeFiles(final File output, final File inputfile1, final File inputfile2)
+            throws IOException{
+
+        try (
+                Reader sourceA = Files.newBufferedReader(inputfile1.toPath());
+                Reader sourceB = Files.newBufferedReader(inputfile2.toPath());
+                Writer destination = Files.newBufferedWriter(output.toPath(), StandardCharsets.UTF_8); ) {
+
+            transfer(sourceA, destination);
+            transfer(sourceB, destination);
+
+        }
+    }
     @Test
-    public void testJS1() throws IOException {
+    public void testExampleJS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example.js");
@@ -132,7 +159,7 @@ public class AppTest
     }
 
     @Test
-    public void testJS2() throws IOException {
+    public void testEventStreamJS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/eventstream.js");
@@ -145,13 +172,31 @@ public class AppTest
     }
 
     @Test
-    public void testJS3() throws IOException {
+    public void testExample2JS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
         val dot = new BetterDot(new DotGraph(""), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example2.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);
         compareSetOfStrings("src/test/resources/example2.nodes.txt", dot.getNodes());
         compareSetOfStrings("src/test/resources/example2.edges.txt", dot.getEdgesWithType());
+    }
+
+    @Test
+    public void testExample3JS() throws IOException, InterruptedException {
+        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
+        val dot = new BetterDot(new DotGraph(""), conditions);
+        val jsPath = "src/test/resources/example3.js";
+        JSFlowGraph.getAllMethods(jsPath, "src/test/resources/new-example3-entrypoints.js");
+        assertEquals(Util.readLines("src/test/resources/example3-entrypoints.js"),
+                     Util.readLines("src/test/resources/new-example3-entrypoints.js"));
+        mergeFiles(new File("src/test/resources/new-example3.js"),
+                   new File("src/test/resources/example3.js"),
+                   new File("src/test/resources/new-example3-entrypoints.js"));
+        val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/new-example3.js");
+        JSFlowGraph.addDataFlowGraph(dot, cg);
+        compareSetOfStrings("src/test/resources/example3.nodes.txt", dot.getNodes());
+        compareSetOfStrings("src/test/resources/example3.edges.txt", dot.getEdgesWithType());
+
     }
 
     @Test
