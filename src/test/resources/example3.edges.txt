@@ -1,4 +1,19 @@
-$SfdxUtils$-[DATAFLOW]->$SfdxUtils$()
-require-[DATAFLOW]->require(child_process)
+execSync-[DATAFLOW]->execSync(add)
+$SfdxUtils$()-[DATAFLOW]->execSfdx($SfdxUtils$())
+Lnew-example3.js-[CALL]->$SfdxUtils$
+undefined-[DATAFLOW]->ne
 $SfdxUtils$execSfdx$-[DATAFLOW]->$SfdxUtils$execSfdx$()
+$SfdxUtils$execSfdx$()-[DATAFLOW]->$SfdxUtils$()
+require-[DATAFLOW]->require(child_process)
+$$undefined-[DATAFLOW]->execSfdx
+$SfdxUtils$-[DATAFLOW]->$SfdxUtils$()
+add-[DATAFLOW]->execSync(add)
+ --targetusername -[DATAFLOW]->add
+execSync(add)-[DATAFLOW]->toString(execSync(add))
+sfdx -[DATAFLOW]->add
+add-[DATAFLOW]->add
+Lnew-example3.js-[CALL]->$SfdxUtils$execSfdx$
+execSfdx-[DATAFLOW]->execSfdx($SfdxUtils$())
+$SfdxUtils$()-[DATAFLOW]->$SfdxUtils$()()
+toString-[DATAFLOW]->toString(execSync(add))
 child_process-[DATAFLOW]->require(child_process)

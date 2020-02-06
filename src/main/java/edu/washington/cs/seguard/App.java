@@ -79,6 +79,7 @@ public class App
             case "entrypoints":
                 assert lang.equals("js");
                 JSFlowGraph.getAllMethods(jsPath, outputPath);
+                break;
             default:
                 throw new RuntimeException("Unsupported mode: " + mode);
         }

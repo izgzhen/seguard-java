@@ -186,11 +186,9 @@ public class AppTest
         JSFlowGraph.getAllMethods(jsPath, "src/test/resources/new-example3-entrypoints.js");
         assertEquals(Util.readLines("src/test/resources/example3-entrypoints.js"),
                      Util.readLines("src/test/resources/new-example3-entrypoints.js"));
-
-
         mergeFiles(new File("src/test/resources/new-example3.js"),
-                   new File("src/test/resources/new-example3-entrypoints.js"),
-                   new File("src/test/resources/example3.js"));
+                   new File("src/test/resources/example3.js"),
+                   new File("src/test/resources/new-example3-entrypoints.js"));
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/new-example3.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);
         compareSetOfStrings("src/test/resources/example3.nodes.txt", dot.getNodes());

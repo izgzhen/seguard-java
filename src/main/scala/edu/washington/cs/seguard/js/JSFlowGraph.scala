@@ -34,13 +34,17 @@ object JSFlowGraph {
     getMethodName(node.getMethod.getDeclaringClass.getName.toString)
   }
 
+  private def toFunctionCall(name: String): String = {
+    name.stripPrefix("$").stripSuffix("$").replace("$", ".") + "();\n"
+  }
+
   def getAllMethods(jsPath: String, outputPath: String): Unit = {
     val path = Paths.get(jsPath)
     JSCallGraphUtil.setTranslatorFactory(new CAstRhinoTranslatorFactory)
     val cg = JSCallGraphBuilderUtil.makeScriptCG(path.getParent.toString, path.getFileName.toString)
     val cha = cg.getClassHierarchy
     val methods = cha.asScala.filter(!_.getName.toString.contains("prologue.js")).flatMap(_.getAllMethods.asScala).toList
-    val lines = methods.map(_.getDeclaringClass.getName.toString.split("/")).filter(_.length > 1).map(_(1) + "();\n")
+    val lines = methods.map(_.getDeclaringClass.getName.toString.split("/")).filter(_.length > 1).map(xs => toFunctionCall(xs(1)))
     val file = new File(outputPath)
     val bw = new BufferedWriter(new FileWriter(file))
     for (line <- lines) {
