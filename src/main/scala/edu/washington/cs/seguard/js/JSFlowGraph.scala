@@ -36,8 +36,22 @@ object JSFlowGraph {
     getMethodName(node.getMethod.getDeclaringClass.getName.toString)
   }
 
+  private def splitAtLast(s: String, c: Char): (String, String) = {
+    if (s.isEmpty) {
+      ("", "")
+    } else {
+      if (s.head == c) {
+        val (heads, rest) = splitAtLast(s.tail, c)
+        (c + heads, rest)
+      } else {
+        ("", s)
+      }
+    }
+  }
+
   private def toFunctionCall(name: String): String = {
-    name.stripPrefix("$").stripSuffix("$").replace("$", ".") + "();\n"
+    val (dollars, rest) = splitAtLast(name.stripPrefix("$").stripSuffix("$"), '$')
+    dollars + rest.replace("$", ".") + "();\n"
   }
 
   def getAllMethods(jsPath: String, outputPath: String): Unit = {
