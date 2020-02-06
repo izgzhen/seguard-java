@@ -1,5 +1,6 @@
 package edu.washington.cs.seguard.js
 
+import java.io.{BufferedWriter, File, FileWriter}
 import java.nio.file.Paths
 
 import com.ibm.wala.cast.ir.ssa.{AstGlobalRead, AstGlobalWrite, AstLexicalRead, AstLexicalWrite, EachElementGetInstruction}
@@ -10,6 +11,7 @@ import com.ibm.wala.cast.js.types.JavaScriptMethods
 import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
 import com.ibm.wala.ipa.callgraph.{CGNode, CallGraph}
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
+import com.ibm.wala.ipa.cha.IClassHierarchy
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
 import edu.washington.cs.seguard.{BetterDot, EdgeType, NodeType}
 
@@ -27,9 +29,26 @@ object JSFlowGraph {
       }
     }
   }
+
   def getMethodName(node: CGNode): Option[String] = {
     getMethodName(node.getMethod.getDeclaringClass.getName.toString)
   }
+
+  def getAllMethods(jsPath: String, outputPath: String): Unit = {
+    val path = Paths.get(jsPath)
+    JSCallGraphUtil.setTranslatorFactory(new CAstRhinoTranslatorFactory)
+    val cg = JSCallGraphBuilderUtil.makeScriptCG(path.getParent.toString, path.getFileName.toString)
+    val cha = cg.getClassHierarchy
+    val methods = cha.asScala.filter(!_.getName.toString.contains("prologue.js")).flatMap(_.getAllMethods.asScala).toList
+    val lines = methods.map(_.getDeclaringClass.getName.toString.split("/")).filter(_.length > 1).map(_(1) + "();\n")
+    val file = new File(outputPath)
+    val bw = new BufferedWriter(new FileWriter(file))
+    for (line <- lines) {
+      bw.write(line)
+    }
+    bw.close()
+  }
+
   def addCallGraph(dot: BetterDot, jsPath: String) : CallGraph = {
     val path = Paths.get(jsPath)
     JSCallGraphUtil.setTranslatorFactory(new CAstRhinoTranslatorFactory)

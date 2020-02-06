@@ -1,8 +1,10 @@
+$SfdxUtils$
 [const]child_process
 $SfdxUtils$execSfdx$()
 [const]$SfdxUtils$execSfdx$
 [const]$SfdxUtils$
 require(child_process)
+$SfdxUtils$execSfdx$
 require
 $$undefined
 $SfdxUtils$()

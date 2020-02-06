@@ -7,4 +7,6 @@ jspath=$(realpath $1)
 JAR=target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
 cd $SCRIPTDIR
 make
-java -jar $JAR --lang js --js $jspath --mode core --sourceSinkFile SourcesAndSinksJS.txt --dotPath $jspath.seguardjs.dot
+tmpfile=$(mktemp /tmp/abc-script.XXXXXX)
+java -jar $JAR --lang js --js $jspath --mode entrypoints --sourceSinkFile SourcesAndSinksJS.txt --outputPath $tmpfile
+#java -jar $JAR --lang js --js $jspath --mode core --sourceSinkFile SourcesAndSinksJS.txt --dotPath $jspath.seguardjs.dot
