@@ -264,15 +264,24 @@ object JSFlowGraph {
               var u_complete = u
               val namespace = node.getNode.toString // name of the function where these variables are defined
               if (!globalVarMap.contains(namespace)) {
-                globalVarMap.put(namespace, new HashMap());
+                globalVarMap.put(namespace, new HashMap())
               }
-              if (instruction.isInstanceOf[AstGlobalRead]) { // global variable
-                val key = instruction.getDef();
-                globalVarMap(namespace).put(key, u_complete)
-              } else if (instruction.isInstanceOf[SSAGetInstruction]) {
-                val idx = aliasMap(namespace)(instruction.asInstanceOf[SSAGetInstruction].getRef())
-                u_complete = globalVarMap(namespace)(idx) + "[" + instruction.asInstanceOf[SSAGetInstruction].getDeclaredField.getName.toString + "]";
-                globalVarMap(namespace).put(instruction.getDef(), u_complete)
+              instruction match {
+                case _: AstGlobalRead => // global variable
+                  val key = instruction.getDef();
+                  globalVarMap(namespace).put(key, u_complete)
+                case getInstruction: SSAGetInstruction =>
+                  aliasMap.get(namespace) match {
+                    case Some(m) =>
+                      m.get(getInstruction.getRef) match {
+                        case Some(idx) =>
+                          u_complete = globalVarMap(namespace)(idx) + "[" + getInstruction.getDeclaredField.getName.toString + "]";
+                          globalVarMap(namespace).put(instruction.getDef(), u_complete)
+                        case None =>
+                      }
+                    case None =>
+                  }
+                case _ =>
               }
               dot.drawNode(u_complete, NodeType.STMT)
               var iu = 0
