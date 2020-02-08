@@ -21,7 +21,7 @@ import scala.jdk.CollectionConverters._
 
 object JSFlowGraph {
   def getMethodName(s: String): Option[String] = {
-    if (s.contains(".js@")) {
+    if (s.contains("@")) {
       None
     } else {
       if (s.contains("/")) {
