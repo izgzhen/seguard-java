@@ -199,9 +199,9 @@ object JSFlowGraph {
     for (n <- superGraph.getProcedureGraph.asScala) {
       if (isApplicationNode(n)) {
         var localAliasMap: HashMap[Int, Int] = new HashMap()
-        println("====== Method " + n + " =======")
-        println(n.getIR)
-        println("===============================")
+//        println("====== Method " + n + " =======")
+//        println(n.getIR)
+//        println("===============================")
         // The IR we used here is in SSA form
         for (instruction <- n.getIR().getInstructions()) {
           if (instruction != null && instruction.isInstanceOf[PrototypeLookup]) {
@@ -234,8 +234,8 @@ object JSFlowGraph {
         val instruction = node.getDelegate.getInstruction
         if (instruction != null) {
 
-          println("======= Instruction of BB " + node.getDelegate.getNumber + " of method " + node.getNode + "==============")
-          println(instruction, instruction.toString(symTable))
+//          println("======= Instruction of BB " + node.getDelegate.getNumber + " of method " + node.getNode + "==============")
+//          println(instruction, instruction.toString(symTable))
 
           // solution is a set of fact nums
           val solution = results.getResult(node)
@@ -246,7 +246,7 @@ object JSFlowGraph {
             // fact remapped back to abstract domain: a pair of (dependent: Int, dependencies: Set[Int])
             // each value is an Int due to SSA construction
             val absValues = dataflow.getDomain.getMappedObject(fact)
-            println("== Dataflow " + fact + ": " + absValues)
+//            println("== Dataflow " + fact + ": " + absValues)
             val to = absValues.fst
             val fromValues = absValues.snd
             for (from <- fromValues.asScala) {
