@@ -21,7 +21,7 @@ import scala.jdk.CollectionConverters._
 
 object JSFlowGraph {
   def getMethodName(s: String): Option[String] = {
-    if (s.contains("@")) {
+    if (s.contains(".js@")) {
       None
     } else {
       if (s.contains("/")) {
@@ -64,7 +64,7 @@ object JSFlowGraph {
     val file = new File(outputPath)
     val bw = new BufferedWriter(new FileWriter(file))
     for (line <- lines) {
-      if (!line.contains(".js@")) {
+      if (!line.contains("@")) {
         bw.write(line)
       }
     }
