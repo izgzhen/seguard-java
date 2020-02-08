@@ -4,6 +4,7 @@ set -x
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 jspath=$(realpath $1)
+outputpath=$(realpath $2)
 JAR=target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
 cd $SCRIPTDIR
 make
@@ -11,4 +12,4 @@ tmpfile=$(mktemp /tmp/abc-script.XXXXXX)
 tmpfile2=$(mktemp /tmp/abc-script.XXXXXX)
 java -jar $JAR --lang js --js $jspath --mode entrypoints --sourceSinkFile SourcesAndSinksJS.txt --outputPath $tmpfile
 cat $jspath $tmpfile > $tmpfile2
-java -jar $JAR --lang js --js $tmpfile2 --mode core --sourceSinkFile SourcesAndSinksJS.txt --outputPath $jspath.seguardjs.dot
+java -jar $JAR --lang js --js $tmpfile2 --mode core --sourceSinkFile SourcesAndSinksJS.txt --outputPath $outputpath
