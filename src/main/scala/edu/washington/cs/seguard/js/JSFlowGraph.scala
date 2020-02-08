@@ -64,7 +64,9 @@ object JSFlowGraph {
     val file = new File(outputPath)
     val bw = new BufferedWriter(new FileWriter(file))
     for (line <- lines) {
-      bw.write(line)
+      if (!line.contains(".js@")) {
+        bw.write(line)
+      }
     }
     bw.close()
   }
