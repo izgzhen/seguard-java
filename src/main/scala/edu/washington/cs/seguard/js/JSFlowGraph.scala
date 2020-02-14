@@ -279,8 +279,12 @@ object JSFlowGraph {
                     case Some(m) =>
                       m.get(getInstruction.getRef) match {
                         case Some(idx) =>
-                          u_complete = globalVarMap(namespace)(idx) + "[" + getInstruction.getDeclaredField.getName.toString + "]";
-                          globalVarMap(namespace).put(instruction.getDef(), u_complete)
+                          globalVarMap(namespace).get(idx) match {
+                            case Some(path) =>
+                              u_complete = path + "[" + getInstruction.getDeclaredField.getName.toString + "]";
+                              globalVarMap(namespace).put(instruction.getDef(), u_complete)
+                            case None =>
+                          }
                         case None =>
                       }
                     case None =>
