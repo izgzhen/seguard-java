@@ -21,6 +21,7 @@ import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.intset.IntSet;
 import com.ibm.wala.util.intset.MutableMapping;
 import com.ibm.wala.util.intset.MutableSparseIntSet;
+import heros.flowfunc.Kill;
 import lombok.val;
 
 import java.util.Collection;
@@ -110,7 +111,9 @@ private class DataFlowDomain extends MutableMapping<Pair<Integer, Set<Integer>>>
     @Override
     public IUnaryFlowFunction getNormalFlowFunction(final BasicBlockInContext<IExplodedBasicBlock> src,
                                                     BasicBlockInContext<IExplodedBasicBlock> dest) {
+      val symTable = src.getNode().getIR().getSymbolTable();
       return d1 -> {
+        val fact = domain.getMappedObject(d1);
         val instr = src.getDelegate().getInstruction();
         MutableSparseIntSet result = MutableSparseIntSet.makeEmpty();
         if (instr == null || instr.getNumberOfUses() < 1 || instr instanceof JavaScriptCheckReference
@@ -150,11 +153,15 @@ private class DataFlowDomain extends MutableMapping<Pair<Integer, Set<Integer>>>
           val from1 = instr.getUse(0);
           val from2 = instr.getUse(1);
           val to = instr.getDef();
-          val fromSet = new HashSet<Integer>();
-          fromSet.add(from1);
-          fromSet.add(from2);
-          val factNum = domain.add(Pair.make(to, fromSet));
-          result.add(factNum);
+          if (from1 == fact.fst || from2 == fact.fst) {
+            result.add(domain.add(Pair.make(to, fact.snd)));
+          }
+          if (symTable.isConstant(from1)) {
+            result.add(domain.add(Pair.make(to, Collections.singleton(from1))));
+          }
+          if (symTable.isConstant(from2)) {
+            result.add(domain.add(Pair.make(to, Collections.singleton(from2))));
+          }
         } else if (instr instanceof SSAUnaryOpInstruction) {
           val from1 = instr.getUse(0);
           val to = instr.getDef();

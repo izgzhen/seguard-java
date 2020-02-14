@@ -11,7 +11,6 @@ import com.ibm.wala.cast.js.types.JavaScriptMethods
 import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
 import com.ibm.wala.ipa.callgraph.{CGNode, CallGraph}
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
-import com.ibm.wala.ipa.cha.IClassHierarchy
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
 import edu.washington.cs.seguard.{BetterDot, EdgeType, NodeType}
 
@@ -98,6 +97,10 @@ object JSFlowGraph {
 
   /**
    * From SSA identifier to abstract node
+   *
+   * FIXME: sometimes i is used to represent the value holder on LHS, which is not strictly the same thing as the whole
+   *        instruction
+   *
    * @param defUse
    * @param symbolTable
    * @param i SSA identifier
@@ -111,7 +114,7 @@ object JSFlowGraph {
           if (v == null) {
             None
           } else {
-            Some(v.toString)
+            Some("[const]" + v.toString.trim())
           }
         } else {
           None
@@ -148,11 +151,9 @@ object JSFlowGraph {
         }
       }
       case invoke:JavaScriptInvoke => {
-        val defs = (0 until invoke.getNumberOfUses).flatMap(i => getDef(defUse, symTable, invoke.getUse(i))).toList
-        if (defs.nonEmpty) {
-          getMethodName(defs.head).map(_ + "(%s)".format(defs.tail.mkString(", ")))
-        } else {
-          None
+        getDef(defUse, symTable, invoke.getUse(0)) match {
+          case Some(f) => Some("[call]" + f)
+          case None => None
         }
       }
       case binop:SSABinaryOpInstruction => Some(binop.getOperator.toString)
@@ -232,33 +233,34 @@ object JSFlowGraph {
         val symTable = node.getNode.getIR.getSymbolTable
         // Each node corresponds to a _single_ instruction
         val instruction = node.getDelegate.getInstruction
-        if (instruction != null) {
 
-//          println("======= Instruction of BB " + node.getDelegate.getNumber + " of method " + node.getNode + "==============")
-//          println(instruction, instruction.toString(symTable))
+        val iFlowDeps = mutable.HashMap[Int, mutable.Set[Int]]()
 
-          // solution is a set of fact nums
-          val solution = results.getResult(node)
-          val iter = solution.intIterator
-          // process each fact at current node
-          while (iter.hasNext) {
-            val fact = iter.next()
-            // fact remapped back to abstract domain: a pair of (dependent: Int, dependencies: Set[Int])
-            // each value is an Int due to SSA construction
-            val absValues = dataflow.getDomain.getMappedObject(fact)
-//            println("== Dataflow " + fact + ": " + absValues)
-            val to = absValues.fst
-            val fromValues = absValues.snd
-            for (from <- fromValues.asScala) {
-              val fromValue = getDef(node.getNode.getDU, symTable, from)
-              val toValue = getDef(node.getNode.getDU, symTable, to)
-              if (fromValue.isDefined && toValue.isDefined) {
-                dot.drawNode(fromValue.get, NodeType.EXPR)
-                dot.drawNode(toValue.get, NodeType.EXPR)
-                dot.drawEdge(fromValue.get, toValue.get, EdgeType.DATAFLOW)
-              }
+        // Collect facts at current node from solution
+        val solution = results.getResult(node)
+        val iter = solution.intIterator
+        while (iter.hasNext) {
+          val fact = iter.next()
+          // fact remapped back to abstract domain: a pair of (dependent: Int, dependencies: Set[Int])
+          // each value is an Int due to SSA construction
+          val absValues = dataflow.getDomain.getMappedObject(fact)
+          iFlowDeps.getOrElseUpdate(absValues.fst, mutable.Set()).addAll(absValues.snd.asScala.map(_.intValue()))
+        }
+
+        val dataFlowDeps = iFlowDeps.flatMap {
+          case (k, v) => {
+            val fromValues = v.flatMap(v => getDef(node.getNode.getDU, symTable, v)).toSet
+            if (fromValues.nonEmpty) {
+              Some((k, fromValues))
+            } else {
+              None
             }
           }
+        }
+
+        if (instruction != null) {
+//          println("======= Instruction of BB " + node.getDelegate.getNumber + " of method " + node.getNode + "==============")
+//          println(instruction, instruction.toString(symTable))
 
           abstractInstruction(node.getNode.getDU, symTable, instruction) match {
             case Some(u) => {
@@ -297,14 +299,20 @@ object JSFlowGraph {
                     dot.drawNode(v, NodeType.STMT)
                     dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
                   }
-                } else {
-                  if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
-                    var v = symTable.getConstantValue(use).toString
-                    if (v.startsWith("L")) {
-                      v = getMethodName(v).get
-                    }
-                    dot.drawNode("[const]" + v, NodeType.CONSTANT)
-                    dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
+                }
+                if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
+                  var v = symTable.getConstantValue(use).toString
+                  if (v.startsWith("L")) {
+                    v = getMethodName(v).get
+                  }
+                  v = "[const]" + v.trim()
+                  dot.drawNode(v, NodeType.CONSTANT)
+                  dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
+                }
+                if (dataFlowDeps.contains(use)) {
+                  for (dep <- dataFlowDeps(use)) {
+                    dot.drawNode("[const]" + dep.trim(), NodeType.CONSTANT) // FIXME: always constant?
+                    dot.drawEdge(dep, u_complete, EdgeType.DATAFLOW)
                   }
                 }
                 iu += 1

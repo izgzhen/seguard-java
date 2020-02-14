@@ -1,42 +1,39 @@
-Buffer-[DATAFLOW]->from(Buffer, hex)
-aes256-[DATAFLOW]->createDecipher(require(crypto), aes256, npm_package_description)
-e-[DATAFLOW]->e()
-a-[DATAFLOW]->e()(f, a, )
-hex-[DATAFLOW]->update(createDecipher(require(crypto), aes256, npm_package_description), hex, utf8)
-[get]constructor()-[DATAFLOW]->_compile([get]constructor(), decoded, )
-from-[DATAFLOW]->from(Buffer, hex)
+[const]-[DATAFLOW]->[call][const]_compile
+npm_package_description-[DATAFLOW]->[call][const]createDecipher
+[get]constructor-[DATAFLOW]->[call][get]constructor
+[const]utf8-[DATAFLOW]->[call][const]final
+[const]createDecipher-[DATAFLOW]->[call][const]createDecipher
+[call][get]constructor-[DATAFLOW]->[call][const]_compile
 decoded-[DATAFLOW]->add
-require-[DATAFLOW]->require(decode(2e2f746573742f64617461))
--[DATAFLOW]->e()(f, a, )
--[DATAFLOW]->_compile([get]constructor(), decoded, )
-decode-[DATAFLOW]->decode(2e2f746573742f64617461)
-hex-[DATAFLOW]->from(Buffer, hex)
-require(crypto)-[DATAFLOW]->createDecipher(require(crypto), aes256, npm_package_description)
-decode-[DATAFLOW]->decode()
-createDecipher-[DATAFLOW]->createDecipher(require(crypto), aes256, npm_package_description)
-toString-[DATAFLOW]->toString(from(Buffer, hex))
-utf8-[DATAFLOW]->update(createDecipher(require(crypto), aes256, npm_package_description), hex, utf8)
-final(createDecipher(require(crypto), aes256, npm_package_description), utf8)-[DATAFLOW]->add
-createDecipher(require(crypto), aes256, npm_package_description)-[DATAFLOW]->update(createDecipher(require(crypto), aes256, npm_package_description), hex, utf8)
-exports-[DATAFLOW]->exports(f)
-f-[DATAFLOW]->exports(f)
-f-[DATAFLOW]->e()(f, a, )
-2e2f746573742f64617461-[DATAFLOW]->decode(2e2f746573742f64617461)
-npm_package_description-[DATAFLOW]->createDecipher(require(crypto), aes256, npm_package_description)
+[const]crypto-[DATAFLOW]->[call]require
+[const]final-[DATAFLOW]->[call][const]final
+[const]utf8-[DATAFLOW]->[call][const]update
+Buffer-[DATAFLOW]->[call][const]from
+[call][const]final-[DATAFLOW]->add
+[const]hex-[DATAFLOW]->[call][const]from
+decode-[DATAFLOW]->[call]decode
+[get]paths-[DATAFLOW]->[call][const]exports
+[const]toString-[DATAFLOW]->[call][const]toString
 Leventstream.js-[CALL]->decode
-[get]constructor-[DATAFLOW]->[get]constructor()
-[get]constructor()-[DATAFLOW]->exports([get]constructor())
-exports-[DATAFLOW]->exports([get]constructor())
-[get]paths-[DATAFLOW]->[get]constructor()
-from(Buffer, hex)-[DATAFLOW]->toString(from(Buffer, hex))
-_compile-[DATAFLOW]->_compile([get]constructor(), decoded, )
-update-[DATAFLOW]->update(createDecipher(require(crypto), aes256, npm_package_description), hex, utf8)
-[get]paths-[DATAFLOW]->f
-createDecipher(require(crypto), aes256, npm_package_description)-[DATAFLOW]->final(createDecipher(require(crypto), aes256, npm_package_description), utf8)
-final-[DATAFLOW]->final(createDecipher(require(crypto), aes256, npm_package_description), utf8)
-decode(2e2f746573742f64617461)-[DATAFLOW]->require(decode(2e2f746573742f64617461))
-require-[DATAFLOW]->require(crypto)
-crypto-[DATAFLOW]->require(crypto)
-e()-[DATAFLOW]->e()(f, a, )
-utf8-[DATAFLOW]->final(createDecipher(require(crypto), aes256, npm_package_description), utf8)
-decoded-[DATAFLOW]->_compile([get]constructor(), decoded, )
+[call]require-[DATAFLOW]->[call][const]createDecipher
+e-[DATAFLOW]->[call]e
+[const]hex-[DATAFLOW]->[call][const]update
+[call][const]createDecipher-[DATAFLOW]->[call][const]update
+[const]2e2f746573742f64617461-[DATAFLOW]->[call]decode
+[const]from-[DATAFLOW]->[call][const]from
+[const]-[DATAFLOW]->[call][call]e
+decoded-[DATAFLOW]->[call][const]_compile
+f-[DATAFLOW]->[call][const]exports
+a-[DATAFLOW]->[call][call]e
+[call][get]constructor-[DATAFLOW]->[call][const]exports
+[const]_compile-[DATAFLOW]->[call][const]_compile
+f-[DATAFLOW]->[call][call]e
+[const]exports-[DATAFLOW]->[call][const]exports
+[call][const]createDecipher-[DATAFLOW]->[call][const]final
+[call]decode-[DATAFLOW]->[call]require
+[call]e-[DATAFLOW]->[call][call]e
+require-[DATAFLOW]->[call]require
+[call][const]from-[DATAFLOW]->[call][const]toString
+[get]paths-[DATAFLOW]->[call][const]_compile
+[const]aes256-[DATAFLOW]->[call][const]createDecipher
+[const]update-[DATAFLOW]->[call][const]update

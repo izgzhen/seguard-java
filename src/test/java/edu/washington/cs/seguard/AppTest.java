@@ -112,7 +112,7 @@ public class AppTest
         PackManager.v().runPacks();
     }
 
-    static boolean record = false;
+    static boolean record = true;
 
     public void compareSetOfStrings(String expectedFile, Set<String> actual) throws IOException {
         if (record) {
@@ -148,6 +148,7 @@ public class AppTest
 
         }
     }
+
     @Test
     public void testExampleJS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
