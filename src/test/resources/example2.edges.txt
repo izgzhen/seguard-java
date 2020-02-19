@@ -1,8 +1,9 @@
+[const][const]1.0-[DATAFLOW]->add
 add-[DATAFLOW]->[call][const]log
-[const]1.0-[DATAFLOW]->[call][const]log
 add-[DATAFLOW]->add
-[const]2.0-[DATAFLOW]->[call][const]log
+[const][const]2.0-[DATAFLOW]->[call][const]log
 console-[DATAFLOW]->[call][const]log
 [const]2.0-[DATAFLOW]->add
+[const][const]1.0-[DATAFLOW]->[call][const]log
 [const]1.0-[DATAFLOW]->add
 [const]log-[DATAFLOW]->[call][const]log

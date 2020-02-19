@@ -112,7 +112,7 @@ public class AppTest
         PackManager.v().runPacks();
     }
 
-    static boolean record = true;
+    static boolean record = false;
 
     public void compareSetOfStrings(String expectedFile, Set<String> actual) throws IOException {
         if (record) {

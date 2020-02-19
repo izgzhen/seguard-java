@@ -315,8 +315,9 @@ object JSFlowGraph {
                 }
                 if (dataFlowDeps.contains(use)) {
                   for (dep <- dataFlowDeps(use)) {
-                    dot.drawNode("[const]" + dep.trim(), NodeType.CONSTANT) // FIXME: always constant?
-                    dot.drawEdge(dep, u_complete, EdgeType.DATAFLOW)
+                    val v = "[const]" + dep.trim()
+                    dot.drawNode(v, NodeType.CONSTANT) // FIXME: always constant?
+                    dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
                   }
                 }
                 iu += 1
