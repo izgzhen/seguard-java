@@ -13,8 +13,7 @@ cache:
 install:
   - git clone https://github.com/izgzhen/android-platforms
   - git clone https://github.com/semantic-graph/semantic-graph.scala
-  - cd semantic-graph.scala
-  - sbt publishM2
+  - cd semantic-graph.scala; sbt publishM2; cd -
 script:
   - make init
   - make test
