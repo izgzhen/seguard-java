@@ -125,7 +125,7 @@
       </dependency>
 <!-- From local install -->
       <dependency>
-          <groupId>default</groupId>
+          <groupId>com.semantic_graph</groupId>
           <artifactId>semantic-graph_2.13</artifactId>
           <version>0.1</version>
       </dependency>
