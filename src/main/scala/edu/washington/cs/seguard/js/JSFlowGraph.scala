@@ -12,7 +12,10 @@ import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
 import com.ibm.wala.ipa.callgraph.{CGNode, CallGraph}
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
-import edu.washington.cs.seguard.{BetterDot, EdgeType, NodeType}
+import com.semantic_graph.writer.GraphWriter
+import edu.washington.cs.seguard.SeGuardEdgeAttr.SeGuardEdgeAttr
+import edu.washington.cs.seguard.SeGuardNodeAttr.SeGuardNodeAttr
+import edu.washington.cs.seguard.{EdgeType, NodeType, SeGuardEdgeAttr, SeGuardNodeAttr}
 
 import scala.collection.mutable
 import scala.collection.mutable.HashMap
@@ -70,7 +73,7 @@ object JSFlowGraph {
     bw.close()
   }
 
-  def addCallGraph(dot: BetterDot, jsPath: String) : CallGraph = {
+  def addCallGraph(g: GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr], jsPath: String) : CallGraph = {
     val path = Paths.get(jsPath)
     JSCallGraphUtil.setTranslatorFactory(new CAstRhinoTranslatorFactory)
     val cg = JSCallGraphBuilderUtil.makeScriptCG(path.getParent.toString, path.getFileName.toString)
@@ -80,9 +83,9 @@ object JSFlowGraph {
           val u = getMethodName(node)
           val v = getMethodName(succ)
           if (u.isDefined && v.isDefined) {
-            dot.drawNode(u.get, NodeType.METHOD)
-            dot.drawNode(v.get, NodeType.METHOD)
-            dot.drawEdge(u.get, v.get, EdgeType.CALL)
+            val x = g.createNode(u.get, Map(SeGuardNodeAttr.TYPE -> NodeType.METHOD.toString))
+            val y = g.createNode(v.get, Map(SeGuardNodeAttr.TYPE -> NodeType.METHOD.toString))
+            g.addEdge(x, y, Map(SeGuardEdgeAttr.TYPE -> EdgeType.CALL.toString))
           }
         })
       })
@@ -188,7 +191,7 @@ object JSFlowGraph {
     }
   }
 
-  def addDataFlowGraph(dot: BetterDot, cg: CallGraph) {
+  def addDataFlowGraph(dot: GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr], cg: CallGraph) {
     // IFDS based data-flow analysis
     val icfg = ExplodedInterproceduralCFG.make(cg)
     val dataflow = new IFDSDataFlow(icfg)
@@ -291,7 +294,7 @@ object JSFlowGraph {
                   }
                 case _ =>
               }
-              dot.drawNode(u_complete, NodeType.STMT)
+              val uId = dot.createNode(u_complete, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString))
               var iu = 0
               while (iu < instruction.getNumberOfUses) {
                 val use = instruction.getUse(iu)
@@ -299,9 +302,8 @@ object JSFlowGraph {
                 if (defined != null) {
                   val defineNode = abstractInstruction(node.getNode.getDU, symTable, defined)
                   if (defineNode.isDefined) {
-                    val v = defineNode.get
-                    dot.drawNode(v, NodeType.STMT)
-                    dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
+                    val vId = dot.createNode(defineNode.get, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString))
+                    dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                   }
                 }
                 if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
@@ -309,15 +311,13 @@ object JSFlowGraph {
                   if (v.startsWith("L")) {
                     v = getMethodName(v).get
                   }
-                  v = "[const]" + v.trim()
-                  dot.drawNode(v, NodeType.CONSTANT)
-                  dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
+                  val vId = dot.createNode("[const]" + v.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
+                  dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                 }
                 if (dataFlowDeps.contains(use)) {
                   for (dep <- dataFlowDeps(use)) {
-                    val v = "[const]" + dep.trim()
-                    dot.drawNode(v, NodeType.CONSTANT) // FIXME: always constant?
-                    dot.drawEdge(v, u_complete, EdgeType.DATAFLOW)
+                    val vId = dot.createNode("[const]" + dep.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
+                    dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                   }
                 }
                 iu += 1

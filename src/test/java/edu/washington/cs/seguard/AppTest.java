@@ -10,15 +10,18 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import android.util.Base64;
 import com.google.common.collect.Sets;
+import com.semantic_graph.writer.GexfWriter;
 import edu.washington.cs.seguard.core.IFDSDataFlowTransformer;
 import edu.washington.cs.seguard.js.JSFlowGraph;
 import edu.washington.cs.seguard.pe.AliasRewriter;
 import lombok.val;
 import org.junit.Test;
 
+import scala.Enumeration;
 import soot.*;
 
 import soot.jimple.InstanceInvokeExpr;
@@ -94,7 +97,7 @@ public class AppTest
                         if (e.getMethod().getName().equals("println") && className.equals("dummyMainClass")) {
                             boolean equals = false;
                             val constants = "[[other]]";
-                            for (Pair result : transformer.getSolver().ifdsResultsAt(u)) {
+                            for (val result : transformer.getSolver().ifdsResultsAt(u)) {
                                 if (result.getO1().equals(e.getArg(0))) {
                                     System.out.println(result.getO2().toString());
                                     val str = result.getO2().toString();
@@ -110,100 +113,6 @@ public class AppTest
             }
         }));
         PackManager.v().runPacks();
-    }
-
-    static boolean record = false;
-
-    public void compareSetOfStrings(String expectedFile, Set<String> actual) throws IOException {
-        if (record) {
-            Util.writeLines(expectedFile, actual);
-            return;
-        }
-        val expected = new HashSet<>(Util.readLines(expectedFile));
-        val msg = String.format("\nActual: %s\n\nDiff: %s",
-                String.join("\n", actual),
-                String.join("\n", Sets.symmetricDifference(expected, actual)));
-        assertEquals(msg, expected, actual);
-    }
-
-    /* Transfer chars from source to destination in efficient chunks */
-    private static final void transfer(final Reader source, final Writer destination) throws IOException {
-        char[] buffer = new char[1024 * 16];
-        int len = 0;
-        while ((len = source.read(buffer)) >= 0) {
-            destination.write(buffer, 0, len);
-        }
-    }
-
-    public void mergeFiles(final File output, final File inputfile1, final File inputfile2)
-            throws IOException{
-
-        try (
-                Reader sourceA = Files.newBufferedReader(inputfile1.toPath());
-                Reader sourceB = Files.newBufferedReader(inputfile2.toPath());
-                Writer destination = Files.newBufferedWriter(output.toPath(), StandardCharsets.UTF_8); ) {
-
-            transfer(sourceA, destination);
-            transfer(sourceB, destination);
-
-        }
-    }
-
-    @Test
-    public void testExampleJS() throws IOException {
-        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new GraphBackend.DOT(), conditions);
-        val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example.js");
-        JSFlowGraph.addDataFlowGraph(dot, cg);
-        compareSetOfStrings("src/test/resources/example.nodes.txt", dot.getNodes());
-        compareSetOfStrings("src/test/resources/example.edges.txt", dot.getEdgesWithType());
-    }
-
-    /**
-     * See https://github.com/semantic-graph/seguard-java/issues/2 for some related issue
-     * FIXME: The current edges list is not perfect since the new object-access-path based node is not connected to other
-     *        nodes. It should be able to find their replacements.
-     * @throws IOException
-     */
-    @Test
-    public void testEventStreamJS() throws IOException {
-        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new GraphBackend.DOT(), conditions);
-        val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/eventstream.js");
-        JSFlowGraph.addDataFlowGraph(dot, cg);
-        System.out.println("==================testJS2===============");
-        System.out.println(dot.getNodes());
-        assertTrue(dot.getNodes().contains("process[env][npm_package_description]"));
-        compareSetOfStrings("src/test/resources/eventstream.nodes.txt", dot.getNodes());
-        compareSetOfStrings("src/test/resources/eventstream.edges.txt", dot.getEdgesWithType());
-    }
-
-    @Test
-    public void testExample2JS() throws IOException {
-        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new GraphBackend.DOT(), conditions);
-        val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example2.js");
-        JSFlowGraph.addDataFlowGraph(dot, cg);
-        compareSetOfStrings("src/test/resources/example2.nodes.txt", dot.getNodes());
-        compareSetOfStrings("src/test/resources/example2.edges.txt", dot.getEdgesWithType());
-    }
-
-    @Test
-    public void testExample3JS() throws IOException {
-        val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new GraphBackend.DOT(), conditions);
-        val jsPath = "src/test/resources/example3.js";
-        JSFlowGraph.getAllMethods(jsPath, "src/test/resources/new-example3-entrypoints.js");
-        assertEquals(Util.readLines("src/test/resources/example3-entrypoints.js"),
-                     Util.readLines("src/test/resources/new-example3-entrypoints.js"));
-        mergeFiles(new File("src/test/resources/new-example3.js"),
-                   new File("src/test/resources/example3.js"),
-                   new File("src/test/resources/new-example3-entrypoints.js"));
-        val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/new-example3.js");
-        JSFlowGraph.addDataFlowGraph(dot, cg);
-        compareSetOfStrings("src/test/resources/example3.nodes.txt", dot.getNodes());
-        compareSetOfStrings("src/test/resources/example3.edges.txt", dot.getEdgesWithType());
-
     }
 
     @Test

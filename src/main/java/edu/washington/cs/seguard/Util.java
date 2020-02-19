@@ -27,6 +27,9 @@ public class Util {
         JS
     }
 
+    private static Util instance = null;
+
+
     private static Logger logger = LoggerFactory.getLogger(SourceSinkManager.class);
 
     static public class SourceLines {
@@ -48,7 +51,7 @@ public class Util {
         }
     }
 
-    static List<String> readLines(String filename) throws IOException {
+    public static List<String> readLines(String filename) throws IOException {
         ArrayList<String> lines = new ArrayList<>();
         BufferedReader br = new BufferedReader(new FileReader(filename));
         String line;
@@ -59,7 +62,7 @@ public class Util {
         return lines;
     }
 
-    static void writeLines(String filename, Collection<String> lines) throws IOException {
+    public static void writeLines(String filename, Collection<String> lines) throws IOException {
         val br = new BufferedWriter(new FileWriter(filename));
         for (val line : lines) {
             br.write(line + "\n");
@@ -116,6 +119,13 @@ public class Util {
 
     public static String toJNISig(String sig) {
         return "L" + sig.replace(".", "/") + ";";
+    }
+
+    public static Util v() {
+        if (instance == null) {
+            instance = new Util();
+        }
+        return instance;
     }
 
     public static String fixedDotStr(String s) {

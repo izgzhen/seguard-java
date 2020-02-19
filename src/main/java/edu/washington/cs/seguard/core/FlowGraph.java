@@ -6,6 +6,7 @@
 
 
 package edu.washington.cs.seguard.core;
+import com.semantic_graph.writer.GraphWriter;
 import edu.washington.cs.seguard.*;
 import edu.washington.cs.seguard.pe.AliasRewriter;
 import edu.washington.cs.seguard.util.StatManager;
@@ -35,10 +36,10 @@ public class FlowGraph {
 
     final private Conditions conditions;
     final private StatManager statManager;
-    final private BetterDot dot;
+    final private GraphWriter dot;
     final private Config config;
 
-    public FlowGraph(Conditions conditions, StatManager statManager, BetterDot dot, Config config) {
+    public FlowGraph(Conditions conditions, StatManager statManager, GraphWriter dot, Config config) {
         this.conditions = conditions;
         this.statManager = statManager;
         this.dot = dot;
@@ -113,7 +114,7 @@ public class FlowGraph {
                                 for (Pair<Value, Set<Abstraction>> p : transformer.solver.ifdsResultsAt(u)) {
                                     if (vbox.getValue().equals(p.getO1())) {
                                         for (Abstraction abstraction : p.getO2()) {
-                                            SootUtils.processDataFlowFacts(abstraction, dot, invoked);
+//                                            SootUtils.processDataFlowFacts(abstraction, dot, invoked);
                                         }
                                     }
                                 }
@@ -262,19 +263,19 @@ public class FlowGraph {
         for (ValueBox use : stmt.getUseBoxes()) {
             if (use.getValue() instanceof IntConstant) {
                 String str = String.valueOf(((IntConstant) use.getValue()).value);
-                if (dot.libNodeMethods().contains(currentInvoked)) {
-                    dot.drawNode(str, NodeType.CONST_INT());
-                    dot.drawEdge(str, currentInvoked, EdgeType.DATAFLOW());
-                }
+//                if (dot.libNodeMethods().contains(currentInvoked)) {
+//                    dot.drawNode(str, NodeType.CONST_INT());
+//                    dot.drawEdge(str, currentInvoked, EdgeType.DATAFLOW());
+//                }
             } else if (use.getValue() instanceof StringConstant) {
-                if (dot.libNodeMethods().contains(currentInvoked)) {
-                    String str = Util.fixedDotStr(((StringConstant) use.getValue()).value);
-                    if (str == null || str.length() > 256) {
-                        continue;
-                    }
-                    dot.drawNode(str, NodeType.CONST_STRING());
-                    dot.drawEdge(str, currentInvoked, EdgeType.DATAFLOW());
-                }
+//                if (dot.libNodeMethods().contains(currentInvoked)) {
+//                    String str = Util.fixedDotStr(((StringConstant) use.getValue()).value);
+//                    if (str == null || str.length() > 256) {
+//                        continue;
+//                    }
+//                    dot.drawNode(str, NodeType.CONST_STRING());
+//                    dot.drawEdge(str, currentInvoked, EdgeType.DATAFLOW());
+//                }
             }
         }
     }
@@ -283,10 +284,10 @@ public class FlowGraph {
         for (Unit dominator : dominanceDirectedGraph.getPredsOf(stmt)) {
             SootMethod domInvoked = getInvokedMethod(dominator);
             if (domInvoked == null) continue;
-            if (dot.libNodeMethods().contains(domInvoked) && dot.libNodeMethods().contains(currentInvoked)
-                    && conditions.isSensitiveMethod(domInvoked) && conditions.isSensitiveMethod(currentInvoked)) {
-                dot.drawEdge(domInvoked, currentInvoked, EdgeType.DOMINATE());
-            }
+//            if (dot.libNodeMethods().contains(domInvoked) && dot.libNodeMethods().contains(currentInvoked)
+//                    && conditions.isSensitiveMethod(domInvoked) && conditions.isSensitiveMethod(currentInvoked)) {
+//                dot.drawEdge(domInvoked, currentInvoked, EdgeType.DOMINATE());
+//            }
         }
     }
 
@@ -301,7 +302,7 @@ public class FlowGraph {
                     for (Unit defUnit : localDefs.getDefsOfAt(l, stmt)) {
                         SootMethod defInvoked = getInvokedMethod(defUnit);
                         if (defInvoked == null) continue;
-                        dot.drawEdge(defInvoked, method, EdgeType.DATAFLOW());
+//                        dot.drawEdge(defInvoked, method, EdgeType.DATAFLOW());
                     }
                 }
             }
@@ -312,9 +313,9 @@ public class FlowGraph {
         SootClass sensitiveParent = conditions.getSensitiveParentClassWithMethod(method.getDeclaringClass(), method.getSubSignature());
         if (sensitiveParent != null) {
             SootMethod pM = sensitiveParent.getMethod(method.getSubSignature());
-            dot.drawNode(method);
-            dot.drawNode(pM, NodeType.SENSITIVE_PARENT());
-            dot.drawEdge(pM, method, EdgeType.FROM_SENSITIVE_PARENT_TO_SENSITIVE_API());
+//            dot.drawNode(method);
+//            dot.drawNode(pM, NodeType.SENSITIVE_PARENT());
+//            dot.drawEdge(pM, method, EdgeType.FROM_SENSITIVE_PARENT_TO_SENSITIVE_API());
         }
     }
 
@@ -326,10 +327,10 @@ public class FlowGraph {
 
     private void addCallEdge(SootMethod src, SootMethod tgt) {
         if (conditions.blacklisted(src)) { return; }
-        dot.drawNode(src);
-        dot.drawNode(tgt);
+//        dot.drawNode(src);
+//        dot.drawNode(tgt);
         if (!tgt.getDeclaringClass().getName().equals("java.lang.RuntimeException")) {
-            dot.drawEdge(src, tgt, EdgeType.CALL());
+//            dot.drawEdge(src, tgt, EdgeType.CALL());
         }
     }
 
@@ -337,7 +338,7 @@ public class FlowGraph {
         for (SootClass cls : staticStringMap.keySet()) {
             if (conditions.blacklisted(cls)) { continue;}
             try {
-                dot.drawNode(cls.getMethodByName("<clinit>"));
+//                dot.drawNode(cls.getMethodByName("<clinit>"));
                 for (String fieldName : staticStringMap.get(cls).keySet()) {
                     String value = staticStringMap.get(cls).get(fieldName);
                     if (value.length() > 256) {
@@ -345,8 +346,8 @@ public class FlowGraph {
                         continue;
                     }
                     String assignment = fieldName + " = " + StringEscapeUtils.escapeJava(value);
-                    dot.drawNode(assignment, NodeType.CONST_STRING());
-                    dot.drawEdge(cls.getMethodByName("<clinit>"), assignment);
+//                    dot.drawNode(assignment, NodeType.CONST_STRING());
+//                    dot.drawEdge(cls.getMethodByName("<clinit>"), assignment);
                 }
             } catch (RuntimeException e) {
                 logger.debug(e.toString());

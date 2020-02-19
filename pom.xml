@@ -123,6 +123,12 @@
           <artifactId>gexf4j</artifactId>
           <version>1.0.0</version>
       </dependency>
+<!-- From local install -->
+      <dependency>
+          <groupId>default</groupId>
+          <artifactId>semantic-graph_2.13</artifactId>
+          <version>0.1</version>
+      </dependency>
     <dependency>
       <groupId>net.sf.trove4j</groupId>
       <artifactId>trove4j</artifactId>

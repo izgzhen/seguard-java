@@ -1,4 +1,6 @@
-language: java
+language: scala
+scala:
+  - 2.13.1
 jdk:
   - openjdk8
 env:
@@ -7,8 +9,12 @@ env:
 cache:
   directories:
     - $HOME/.m2
+    - $HOME/.sbt
 install:
   - git clone https://github.com/izgzhen/android-platforms
+  - git clone https://github.com/semantic-graph/semantic-graph.scala
+  - cd semantic-graph.scala
+  - sbt publishM2
 script:
   - make init
   - make test

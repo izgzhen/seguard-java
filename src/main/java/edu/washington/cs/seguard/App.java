@@ -1,5 +1,6 @@
 package edu.washington.cs.seguard;
 
+import com.semantic_graph.writer.GexfWriter;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -13,7 +14,6 @@ import edu.washington.cs.seguard.pe.JimpleRewriter;
 import edu.washington.cs.seguard.util.StatManager;
 import lombok.val;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
-import soot.util.dot.DotGraph;
 
 public class App
 {
@@ -61,19 +61,19 @@ public class App
             case "core":
                 Conditions conditions = new Conditions(sourceSinkFile, config);
                 if (lang == null || lang.equals("java")) {
-                    val dot = new BetterDot(new GraphBackend.DOT(), conditions);
+//                    val dot = new BetterDot(new GraphBackend.DOT(), conditions);
                     System.out.println("Generating CallGraph (Spark)...");
-                    val flowGraph = new FlowGraph(conditions, statManager, dot, config);
+//                    val flowGraph = new FlowGraph(conditions, statManager, dot, config);
                     SootOptionManager.Manager().buildOptionFlowGraph(
                             androidPlatforms, apkPath + ".out",
                             apkPath, "spark", new ProcessManifest(apkPath));
-                    flowGraph.Main();
+//                    flowGraph.Main();
                 }
                 else if (lang.equals("js")) {
-                    val dot = new BetterDot(new GraphBackend.GEXF(), conditions);
-                    val cg = JSFlowGraph.addCallGraph(dot, jsPath);
-                    JSFlowGraph.addDataFlowGraph(dot, cg);
-                    dot.write(outputPath);
+                    val g = new GexfWriter<SeGuardNodeAttr$.Value, SeGuardEdgeAttr$.Value>();
+                    val cg = JSFlowGraph.addCallGraph(g, jsPath);
+                    JSFlowGraph.addDataFlowGraph(g, cg);
+                    g.write(outputPath);
                 }
                 System.out.println("Written to " + outputPath);
                 break;
