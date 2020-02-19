@@ -152,7 +152,7 @@ public class AppTest
     @Test
     public void testExampleJS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new DotGraph(""), conditions);
+        val dot = new BetterDot(new GraphBackend.DOT(), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);
         compareSetOfStrings("src/test/resources/example.nodes.txt", dot.getNodes());
@@ -168,7 +168,7 @@ public class AppTest
     @Test
     public void testEventStreamJS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new DotGraph(""), conditions);
+        val dot = new BetterDot(new GraphBackend.DOT(), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/eventstream.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);
         System.out.println("==================testJS2===============");
@@ -181,7 +181,7 @@ public class AppTest
     @Test
     public void testExample2JS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new DotGraph(""), conditions);
+        val dot = new BetterDot(new GraphBackend.DOT(), conditions);
         val cg = JSFlowGraph.addCallGraph(dot, "src/test/resources/example2.js");
         JSFlowGraph.addDataFlowGraph(dot, cg);
         compareSetOfStrings("src/test/resources/example2.nodes.txt", dot.getNodes());
@@ -191,7 +191,7 @@ public class AppTest
     @Test
     public void testExample3JS() throws IOException {
         val conditions = new Conditions("SourcesAndSinks.txt", Config.load("src/test/resources/config.yaml"));
-        val dot = new BetterDot(new DotGraph(""), conditions);
+        val dot = new BetterDot(new GraphBackend.DOT(), conditions);
         val jsPath = "src/test/resources/example3.js";
         JSFlowGraph.getAllMethods(jsPath, "src/test/resources/new-example3-entrypoints.js");
         assertEquals(Util.readLines("src/test/resources/example3-entrypoints.js"),

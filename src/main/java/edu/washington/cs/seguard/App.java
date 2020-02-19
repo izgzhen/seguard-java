@@ -60,8 +60,8 @@ public class App
                 break;
             case "core":
                 Conditions conditions = new Conditions(sourceSinkFile, config);
-                val dot = new BetterDot(new DotGraph(""), conditions);
                 if (lang == null || lang.equals("java")) {
+                    val dot = new BetterDot(new GraphBackend.DOT(), conditions);
                     System.out.println("Generating CallGraph (Spark)...");
                     val flowGraph = new FlowGraph(conditions, statManager, dot, config);
                     SootOptionManager.Manager().buildOptionFlowGraph(
@@ -70,11 +70,12 @@ public class App
                     flowGraph.Main();
                 }
                 else if (lang.equals("js")) {
+                    val dot = new BetterDot(new GraphBackend.GEXF(), conditions);
                     val cg = JSFlowGraph.addCallGraph(dot, jsPath);
                     JSFlowGraph.addDataFlowGraph(dot, cg);
+                    dot.write(outputPath);
                 }
-                System.out.println("Generating CallGraph dot file at " + outputPath);
-                dot.plot(outputPath);
+                System.out.println("Written to " + outputPath);
                 break;
             case "entrypoints":
                 assert lang.equals("js");
