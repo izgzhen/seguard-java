@@ -65,6 +65,7 @@ class JsTest {
       val lv = g.getNodeLabel(v)
       lu + "-[" + g.getEdgeAttrs(u, v)(SeGuardEdgeAttr.TYPE) + "]->" + lv
     })
+    g.write(jsPath.replace(".js", ".gexf"))
     labels
   }
 
