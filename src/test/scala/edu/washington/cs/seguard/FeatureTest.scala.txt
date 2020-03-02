@@ -1,4 +1,4 @@
-package edu.cs.washington.seguard
+package edu.washington.cs.seguard
 
 //import edu.washington.cs.seguard.{BetterDot, Conditions, Config, GraphBackend, NodeType, SootOptionManager, Util}
 import edu.washington.cs.seguard.Util.Lang

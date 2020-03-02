@@ -1,4 +1,4 @@
-package edu.cs.washington.seguard
+package edu.washington.cs.seguard
 
 import java.io.{File, Reader, Writer}
 import java.nio.charset.StandardCharsets
@@ -7,7 +7,6 @@ import java.nio.file.Files
 import com.semantic_graph.writer.GexfWriter
 import edu.washington.cs.seguard.SeGuardEdgeAttr.SeGuardEdgeAttr
 import edu.washington.cs.seguard.SeGuardNodeAttr.SeGuardNodeAttr
-import edu.washington.cs.seguard.{SeGuardEdgeAttr, Util}
 import edu.washington.cs.seguard.js.JSFlowGraph
 import org.junit.Test
 
