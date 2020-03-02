@@ -3,33 +3,21 @@ package edu.washington.cs.seguard;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import android.util.Base64;
-import com.google.common.collect.Sets;
-import com.semantic_graph.writer.GexfWriter;
 import edu.washington.cs.seguard.core.IFDSDataFlowTransformer;
-import edu.washington.cs.seguard.js.JSFlowGraph;
 import edu.washington.cs.seguard.pe.AliasRewriter;
 import lombok.val;
 import org.junit.Test;
 
-import scala.Enumeration;
 import soot.*;
 
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.options.Options;
 
-import soot.toolkits.scalar.Pair;
-import soot.util.dot.DotGraph;
 
 /**
  * Unit tests.
