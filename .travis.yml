@@ -12,6 +12,8 @@ cache:
     - $HOME/.sbt
 install:
   - git clone https://github.com/izgzhen/android-platforms
+  - git clone https://github.com/izgzhen/msbase.scala
+  - cd msbase.scala; sbt publishM2; cd -
   - git clone https://github.com/semantic-graph/semantic-graph.scala
   - cd semantic-graph.scala; sbt publishM2; cd -
 script:
