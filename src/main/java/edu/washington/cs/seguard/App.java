@@ -61,13 +61,13 @@ public class App
             case "core":
                 Conditions conditions = new Conditions(sourceSinkFile, config);
                 if (lang == null || lang.equals("java")) {
-//                    val dot = new BetterDot(new GraphBackend.DOT(), conditions);
+                    val g = new GexfWriter<SeGuardNodeAttr$.Value, SeGuardEdgeAttr$.Value>();
                     System.out.println("Generating CallGraph (Spark)...");
-//                    val flowGraph = new FlowGraph(conditions, statManager, dot, config);
+                    val flowGraph = new FlowGraph(conditions, statManager, g, config);
                     SootOptionManager.Manager().buildOptionFlowGraph(
                             androidPlatforms, apkPath + ".out",
                             apkPath, "spark", new ProcessManifest(apkPath));
-//                    flowGraph.Main();
+                    flowGraph.Main();
                 }
                 else if (lang.equals("js")) {
                     val g = new GexfWriter<SeGuardNodeAttr$.Value, SeGuardEdgeAttr$.Value>();

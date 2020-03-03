@@ -6,8 +6,12 @@
 
 
 package edu.washington.cs.seguard.core;
+import com.beust.jcommander.internal.Sets;
+import com.google.common.collect.Maps;
+import com.semantic_graph.NodeId;
 import com.semantic_graph.writer.GraphWriter;
 import edu.washington.cs.seguard.*;
+import edu.washington.cs.seguard.js.ScalaHelpers;
 import edu.washington.cs.seguard.pe.AliasRewriter;
 import edu.washington.cs.seguard.util.StatManager;
 import lombok.SneakyThrows;
@@ -30,19 +34,18 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class FlowGraph {
     private Logger logger = LoggerFactory.getLogger(FlowGraph.class);
 
     final private Conditions conditions;
     final private StatManager statManager;
-    final private GraphWriter dot;
+    final private GraphWriter<SeGuardNodeAttr$.Value, SeGuardEdgeAttr$.Value> g;
     final private Config config;
 
-    public FlowGraph(Conditions conditions, StatManager statManager, GraphWriter dot, Config config) {
+    public FlowGraph(Conditions conditions, StatManager statManager, GraphWriter<SeGuardNodeAttr$.Value, SeGuardEdgeAttr$.Value> g, Config config) {
         this.conditions = conditions;
         this.statManager = statManager;
-        this.dot = dot;
+        this.g = g;
         this.config = config;
     }
 
@@ -95,6 +98,15 @@ public class FlowGraph {
         SootOptionManager.Manager().sootRunPacks();
     }
 
+    private Map<SootMethod, NodeId> methodIds = Maps.newHashMap();
+
+    private NodeId getMethodId(SootMethod method) {
+        if (!methodIds.containsKey(method)) {
+            methodIds.put(method, ScalaHelpers.createNodeForGraph(g, method.getSignature(), NodeType.METHOD()));
+        }
+        return methodIds.get(method);
+    }
+
     private void collectDataflowFacts(IFDSDataFlowTransformer transformer) {
         for (SootClass cls : Scene.v().getClasses()) {
             for (SootMethod m : cls.getMethods()) {
@@ -109,12 +121,13 @@ public class FlowGraph {
                     Stmt s = (Stmt) u;
                     if (s.containsInvokeExpr()) {
                         SootMethod invoked = s.getInvokeExpr().getMethod();
+                        val invokedId = getMethodId(invoked);
                         if (conditions.isSensitiveMethod(invoked)) {
                             for (ValueBox vbox : u.getUseBoxes()) {
                                 for (Pair<Value, Set<Abstraction>> p : transformer.solver.ifdsResultsAt(u)) {
                                     if (vbox.getValue().equals(p.getO1())) {
                                         for (Abstraction abstraction : p.getO2()) {
-//                                            SootUtils.processDataFlowFacts(abstraction, dot, invoked);
+                                            SootUtils.processDataFlowFacts(abstraction, g, invokedId);
                                         }
                                     }
                                 }
@@ -253,29 +266,32 @@ public class FlowGraph {
             // e.g. Runtime.exec correctly. Example: c577b7e730f955a5f99642e5a8898f64a5b5080d1bf2096804f9992a895ac956.apk
             addCallEdge(method, currentInvoked);
 
+            NodeId currentInvokedId = getMethodId(currentInvoked);
             if ((conditions.isSensitiveMethod(currentInvoked)) || conditions.isDataflowMethod(currentInvoked)) {
-                collectLocalDataflowIntoSensitiveAPI(stmt, currentInvoked);
+                collectLocalDataflowIntoSensitiveAPI(stmt, currentInvokedId);
             }
         }
     }
 
-    private void collectLocalDataflowIntoSensitiveAPI(Unit stmt, SootMethod currentInvoked) {
+    private Set<NodeId> libNodeMethodIds = Sets.newHashSet();
+
+    private void collectLocalDataflowIntoSensitiveAPI(Unit stmt, NodeId currentInvokedId) {
         for (ValueBox use : stmt.getUseBoxes()) {
             if (use.getValue() instanceof IntConstant) {
-                String str = String.valueOf(((IntConstant) use.getValue()).value);
-//                if (dot.libNodeMethods().contains(currentInvoked)) {
-//                    dot.drawNode(str, NodeType.CONST_INT());
-//                    dot.drawEdge(str, currentInvoked, EdgeType.DATAFLOW());
-//                }
+                val str = String.valueOf(((IntConstant) use.getValue()).value);
+                if (libNodeMethodIds.contains(currentInvokedId)) {
+                    val v = ScalaHelpers.createNodeForGraph(g, str, NodeType.CONST_INT());
+                    ScalaHelpers.addEdgeForGraph(g, v, currentInvokedId, EdgeType.DATAFLOW());
+                }
             } else if (use.getValue() instanceof StringConstant) {
-//                if (dot.libNodeMethods().contains(currentInvoked)) {
-//                    String str = Util.fixedDotStr(((StringConstant) use.getValue()).value);
-//                    if (str == null || str.length() > 256) {
-//                        continue;
-//                    }
-//                    dot.drawNode(str, NodeType.CONST_STRING());
-//                    dot.drawEdge(str, currentInvoked, EdgeType.DATAFLOW());
-//                }
+                if (libNodeMethodIds.contains(currentInvokedId)) {
+                    String str = Util.fixedDotStr(((StringConstant) use.getValue()).value);
+                    if (str == null || str.length() > 256) {
+                        continue;
+                    }
+                    val v = ScalaHelpers.createNodeForGraph(g, str, NodeType.CONST_INT());
+                    ScalaHelpers.addEdgeForGraph(g, v, currentInvokedId, EdgeType.DATAFLOW());
+                }
             }
         }
     }

@@ -123,11 +123,11 @@
           <artifactId>gexf4j</artifactId>
           <version>1.0.0</version>
       </dependency>
-<!-- From local install -->
+<!-- From jitpack -->
       <dependency>
           <groupId>com.github.semantic-graph</groupId>
           <artifactId>semantic-graph.scala</artifactId>
-          <version>0.1.0</version>
+          <version>0.2.0</version>
       </dependency>
     <dependency>
       <groupId>net.sf.trove4j</groupId>
