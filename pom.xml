@@ -125,9 +125,9 @@
       </dependency>
 <!-- From local install -->
       <dependency>
-          <groupId>com.semantic_graph</groupId>
-          <artifactId>semantic-graph_2.13</artifactId>
-          <version>0.1</version>
+          <groupId>com.github.semantic-graph</groupId>
+          <artifactId>semantic-graph.scala</artifactId>
+          <version>0.1.0</version>
       </dependency>
     <dependency>
       <groupId>net.sf.trove4j</groupId>
@@ -156,6 +156,10 @@
       </dependency>
   </dependencies>
 <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
   <!-- <repository>
     <id>soot-snapshot</id>
     <name>soot snapshots</name>
