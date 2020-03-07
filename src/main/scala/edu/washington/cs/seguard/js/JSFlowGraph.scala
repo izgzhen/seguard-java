@@ -195,7 +195,7 @@ object JSFlowGraph {
     // IFDS based data-flow analysis
     val icfg = ExplodedInterproceduralCFG.make(cg)
     val dataflow = new IFDSDataFlow(icfg)
-    val results = dataflow.analyze()
+    val results = dataflow.analyze
     val superGraph = dataflow.getSupergraph
     val aliasMap: HashMap[String, HashMap[Int, Int]] = new HashMap();
     val globalVarMap: HashMap[String, HashMap[Int, String]] = new HashMap();
