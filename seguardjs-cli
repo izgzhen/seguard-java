@@ -7,7 +7,9 @@ jspath=$(realpath $1)
 outputpath=$(realpath $2)
 JAR=target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
 cd $SCRIPTDIR
-make
+if [ -z "$BATCH_RUN" ]; then
+    make
+fi
 tmpfile=$(mktemp /tmp/abc-script.XXXXXX)
 tmpfile2=$(mktemp /tmp/abc-script.XXXXXX)
 java -jar $JAR --lang js --js $jspath --mode entrypoints --sourceSinkFile SourcesAndSinksJS.txt --outputPath $tmpfile
