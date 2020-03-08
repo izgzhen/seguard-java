@@ -21,7 +21,6 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
   final private val cha = icfg.getCallGraph.getClassHierarchy
   final private val supergraph = ICFGSupergraph.make(icfg.getCallGraph)
   final private val domain = new DataFlowDomain
-  final private val aliasMap = new util.HashMap[String, Map[Int, Int]]()
   // For each pair ((v, facts), idx) in domain (where v is a variable,
   // facts are facts v rely on, idx is the index of (v, facts) in domain),
   // there would be (v, set) in factNumMap, where idx is in set, so that we
@@ -39,8 +38,8 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
    * controls numbering of putstatic instructions for use in tabulation
    */
   @SuppressWarnings(Array("serial")) class DataFlowDomain
-    extends MutableMapping[Pair[Either[Int, FieldReference], Set[Either[Int, FieldReference]]]]
-      with TabulationDomain[Pair[Either[Int, FieldReference], Set[Either[Int, FieldReference]]], BasicBlockInContext[IExplodedBasicBlock]] {
+    extends MutableMapping[Pair[Either[Int, String], Set[Either[Int, String]]]]
+      with TabulationDomain[Pair[Either[Int, String], Set[Either[Int, String]]], BasicBlockInContext[IExplodedBasicBlock]] {
     override def hasPriorityOver(p1: PathEdge[BasicBlockInContext[IExplodedBasicBlock]], p2: PathEdge[BasicBlockInContext[IExplodedBasicBlock]]): Boolean = { // don't worry about worklist priorities
       false
     }
@@ -81,42 +80,56 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
         val fact = domain.getMappedObject(d1)
         val instr = src.getDelegate.getInstruction
         val result = MutableSparseIntSet.makeEmpty
-        if (instr == null || instr.getNumberOfUses < 1 || instr.isInstanceOf[JavaScriptCheckReference]
-          || instr.isInstanceOf[SetPrototype]
+        if (instr == null || (instr.getNumberOfUses < 1 && !instr.isInstanceOf[AstGlobalRead])
+          || instr.isInstanceOf[JavaScriptCheckReference] || instr.isInstanceOf[SetPrototype]
           || instr.isInstanceOf[SSAConditionalBranchInstruction]
           || instr.isInstanceOf[AstLexicalWrite] || instr.isInstanceOf[JavaScriptTypeOfInstruction]
           || instr.isInstanceOf[EachElementGetInstruction]) {
           // do nothing
-        } else if (instr.isInstanceOf[PrototypeLookup]) {
-
-        }
-        else instr match {
-          case getInstr: SSAGetInstruction =>
-            val from = getInstr.getUse(0)
-            val to = getInstr.getDef
-            val factNum = domain.add(Pair.make(Left(to), Collections.singleton(Left(from))))
+        } else instr match {
+          case lookup: PrototypeLookup =>  // 4-5 -> 32
+            val from = lookup.getUse(0)
+            val to = lookup.getDef(0)
+            val factNum = domain.add(Pair.make(Left(to), fact.snd))
             result.add(factNum)
-//            factNumMap.put(to, factNum)
+          case readInstr: AstGlobalRead =>
+            val from = readInstr.getGlobalName
+            val to = readInstr.getDef
+            val deps = new HashSet[Either[Int, String]](fact.snd)
+            deps.add(Right(from))
+            val factNum = domain.add(Pair.make(Left(to), deps))
+            result.add(factNum)
+          case writeInstr: AstGlobalWrite =>
+            val to = writeInstr.getGlobalName
+            val factNum = domain.add(Pair.make(Right(to), fact.snd))
+            result.add(factNum)
+          case getInstr: SSAGetInstruction =>
+            val from = getInstr.getRef
+            val to = getInstr.getDef
+            val deps = new HashSet[Either[Int, String]](fact.snd)
+            deps.add(Left(from))
+            if (!getInstr.isStatic) {
+              deps.add(Right("\"" + getInstr.getDeclaredField.getName + "\""))
+            }
+            val factNum = domain.add(Pair.make(Left(to), deps))
+            result.add(factNum)
           case putInstr: SSAPutInstruction =>
             if (putInstr.getNumberOfUses > 1) {
               val from = putInstr.getUse(1)
               val to = putInstr.getUse(0)
               val factNum = domain.add(Pair.make(Left(to), Collections.singleton(Left(from))))
               result.add(factNum)
-//              factNumMap.put(to, factNum)
             }
           case write: JavaScriptPropertyWrite =>
             val from = write.getUse(2)
             val to = write.getObjectRef
             val factNum = domain.add(Pair.make(Left(to), Collections.singleton(Left(from))))
             result.add(factNum)
-//            factNumMap.put(to, factNum)
           case read: JavaScriptPropertyRead =>
             val from = read.getObjectRef
             val to = read.getDef
             val factNum = domain.add(Pair.make(Left(to), Collections.singleton(Left(from))))
             result.add(factNum)
-//            factNumMap.put(to, factNum)
           case _: SSAReturnInstruction => // move the kill statement to the end of the function
           case _: SSABinaryOpInstruction =>
             val from1 = instr.getUse(0)
@@ -159,7 +172,7 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
    * the flow functions.
    *
    */
-  private class ReachingDefsProblem extends PartiallyBalancedTabulationProblem[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, FieldReference], Set[Either[Int, FieldReference]]]] {
+  private class ReachingDefsProblem extends PartiallyBalancedTabulationProblem[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, String], Set[Either[Int, String]]]] {
     private val flowFunctions = new DataFlowFunctions(domain)
     /**
      * path edges corresponding to all putstatic instructions, used as seeds for the analysis
@@ -175,7 +188,7 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
       while (itr.hasNext) {
         val cgNode = itr.next()
         val fakeEntry = getFakeEntry(cgNode)
-        val factNum = domain.add(Pair.make(Left(0), new HashSet[Either[Int, FieldReference]]))
+        val factNum = domain.add(Pair.make(Left(0), new HashSet[Either[Int, String]]))
         icfg.getSuccNodes(fakeEntry).forEachRemaining((succ: BasicBlockInContext[IExplodedBasicBlock]) => {
           def foo(succ: BasicBlockInContext[IExplodedBasicBlock]) = {
             val entryInstr = fakeEntry.getDelegate.getInstruction
@@ -207,7 +220,7 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
 
     override def getFunctionMap: IPartiallyBalancedFlowFunctions[BasicBlockInContext[IExplodedBasicBlock]] = flowFunctions
 
-    override def getDomain: TabulationDomain[Pair[Either[Int, FieldReference], Set[Either[Int, FieldReference]]], BasicBlockInContext[IExplodedBasicBlock]] = domain
+    override def getDomain: TabulationDomain[Pair[Either[Int, String], Set[Either[Int, String]]], BasicBlockInContext[IExplodedBasicBlock]] = domain
 
     /**
      * we don't need a merge function; the default unioning of tabulation works fine
@@ -222,9 +235,9 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
   /**
    * perform the tabulation analysis and return the {@link TabulationResult}
    */
-  def analyze: TabulationResult[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, FieldReference], Set[Either[Int, FieldReference]]]] = {
+  def analyze: TabulationResult[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, String], Set[Either[Int, String]]]] = {
     val solver = PartiallyBalancedTabulationSolver.createPartiallyBalancedTabulationSolver(new ReachingDefsProblem, null)
-    var result: TabulationResult[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, FieldReference], Set[Either[Int, FieldReference]]]] = null
+    var result: TabulationResult[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, String], Set[Either[Int, String]]]] = null
     try result = solver.solve
     catch {
       case e: CancelException =>
@@ -236,5 +249,5 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
 
   def getSupergraph: ISupergraph[BasicBlockInContext[IExplodedBasicBlock], CGNode] = supergraph
 
-  def getDomain: TabulationDomain[Pair[Either[Int, FieldReference], Set[Either[Int, FieldReference]]], BasicBlockInContext[IExplodedBasicBlock]] = domain
+  def getDomain: TabulationDomain[Pair[Either[Int, String], Set[Either[Int, String]]], BasicBlockInContext[IExplodedBasicBlock]] = domain
 }

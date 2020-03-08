@@ -238,7 +238,7 @@ object JSFlowGraph {
         // Each node corresponds to a _single_ instruction
         val instruction = node.getDelegate.getInstruction
 
-        val iFlowDeps = mutable.HashMap[Either[Int, FieldReference], mutable.Set[Either[Int, FieldReference]]]()
+        val iFlowDeps = mutable.HashMap[Either[Int, String], mutable.Set[Either[Int, String]]]()
 
         // Collect facts at current node from solution
         val solution = results.getResult(node)
@@ -256,7 +256,7 @@ object JSFlowGraph {
             val fromValues = v.flatMap(v => {
               v match {
                 case Left(i) => getDef(node.getNode.getDU, symTable, i)
-                case Right(gr) => Some(gr.getName.toString)
+                case Right(s) => Some(s)
               }
             } : Option[String]).toSet
             if (fromValues.nonEmpty) {
