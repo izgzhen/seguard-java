@@ -1,10 +1,15 @@
 g-[CALL]->f
+[const]global Function-[DATAFLOW]->[call]f
+[const]global h-[DATAFLOW]->[call]h
 Lexample.js-[CALL]->h
+[const]global f-[DATAFLOW]->[call]f
 h-[DATAFLOW]->[call]h
 h-[CALL]->g
-[call]g-[DATAFLOW]->add
+[const]global __WALA__int3rnal__global-[DATAFLOW]->[call]h
 [const]1.0-[DATAFLOW]->add
 h-[CALL]->f
 [call]f-[DATAFLOW]->add
 f-[DATAFLOW]->[call]f
 g-[DATAFLOW]->[call]g
+[const]global __WALA__int3rnal__global-[DATAFLOW]->[call]f
+[call]g-[DATAFLOW]->add

@@ -1,9 +1,10 @@
-add
-console
-[const]log
-[const]2.0
+[const]add
 [const]1.0
+[call][const]log
 [const][const]2.0
 [const][const]1.0
-[call][const]log
+[const]2.0
 $$undefined
+[const]log
+add
+console

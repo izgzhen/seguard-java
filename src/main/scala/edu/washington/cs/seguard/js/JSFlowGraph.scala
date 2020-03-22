@@ -12,6 +12,7 @@ import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
 import com.ibm.wala.ipa.callgraph.{CGNode, CallGraph}
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
+import com.ibm.wala.types.FieldReference
 import com.semantic_graph.writer.GraphWriter
 import edu.washington.cs.seguard.SeGuardEdgeAttr.SeGuardEdgeAttr
 import edu.washington.cs.seguard.SeGuardNodeAttr.SeGuardNodeAttr
@@ -195,7 +196,7 @@ object JSFlowGraph {
     // IFDS based data-flow analysis
     val icfg = ExplodedInterproceduralCFG.make(cg)
     val dataflow = new IFDSDataFlow(icfg)
-    val results = dataflow.analyze()
+    val results = dataflow.analyze
     val superGraph = dataflow.getSupergraph
     val aliasMap: HashMap[String, HashMap[Int, Int]] = new HashMap();
     val globalVarMap: HashMap[String, HashMap[Int, String]] = new HashMap();
@@ -237,7 +238,7 @@ object JSFlowGraph {
         // Each node corresponds to a _single_ instruction
         val instruction = node.getDelegate.getInstruction
 
-        val iFlowDeps = mutable.HashMap[Int, mutable.Set[Int]]()
+        val iFlowDeps = mutable.HashMap[Either[Int, String], mutable.Set[Either[Int, String]]]()
 
         // Collect facts at current node from solution
         val solution = results.getResult(node)
@@ -247,12 +248,17 @@ object JSFlowGraph {
           // fact remapped back to abstract domain: a pair of (dependent: Int, dependencies: Set[Int])
           // each value is an Int due to SSA construction
           val absValues = dataflow.getDomain.getMappedObject(fact)
-          iFlowDeps.getOrElseUpdate(absValues.fst, mutable.Set()).addAll(absValues.snd.asScala.map(_.intValue()))
+          iFlowDeps.getOrElseUpdate(absValues.fst, mutable.Set()).addAll(absValues.snd.asScala)
         }
 
         val dataFlowDeps = iFlowDeps.flatMap {
           case (k, v) => {
-            val fromValues = v.flatMap(v => getDef(node.getNode.getDU, symTable, v)).toSet
+            val fromValues = v.flatMap(v => {
+              v match {
+                case Left(i) => getDef(node.getNode.getDU, symTable, i)
+                case Right(s) => Some(s)
+              }
+            } : Option[String]).toSet
             if (fromValues.nonEmpty) {
               Some((k, fromValues))
             } else {
@@ -314,8 +320,8 @@ object JSFlowGraph {
                   val vId = dot.createNode("[const]" + v.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
                   dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                 }
-                if (dataFlowDeps.contains(use)) {
-                  for (dep <- dataFlowDeps(use)) {
+                if (dataFlowDeps.contains(Left(use))) {
+                  for (dep <- dataFlowDeps(Left(use))) {
                     val vId = dot.createNode("[const]" + dep.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
                     dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                   }
