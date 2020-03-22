@@ -21,18 +21,6 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
   final private val cha = icfg.getCallGraph.getClassHierarchy
   final private val supergraph = ICFGSupergraph.make(icfg.getCallGraph)
   final private val domain = new DataFlowDomain
-  // For each pair ((v, facts), idx) in domain (where v is a variable,
-  // facts are facts v rely on, idx is the index of (v, facts) in domain),
-  // there would be (v, set) in factNumMap, where idx is in set, so that we
-  // could easily find the
-  // idx of for v, and thus find the facts
-//  final private val factNumMap = new util.HashMap[Int, Int]()
-
-  def printDomain() : Unit = {
-    println("Domain:")
-    println(domain)
-    println("=========Domain finish======")
-  }
 
   /**
    * controls numbering of putstatic instructions for use in tabulation
@@ -62,7 +50,33 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
      * flow function from call node to return node when there are no targets for the call site; not a case we are expecting
      */
     override def getCallNoneToReturnFlowFunction(src: BasicBlockInContext[IExplodedBasicBlock], dest: BasicBlockInContext[IExplodedBasicBlock]): IUnaryFlowFunction = { // if we're missing callees, just keep what information we have
-      IdentityFlowFunction.identity
+      val instr = src.getDelegate.getInstruction
+      instr match {
+        case invoke:JavaScriptInvoke =>
+          d1: Int => {
+            val fact = domain.getMappedObject(d1)
+            val result = MutableSparseIntSet.makeEmpty
+            result.add(d1)
+            fact.fst match {
+              case Left(i) =>
+                if (invoke.getNumberOfReturnValues > 1) {
+                  for(paramIdx <- 1 until invoke.getNumberOfPositionalParameters){
+                    val param = invoke.getUse(paramIdx)
+                    if (param == i) {
+                      val deps = new util.HashSet[Either[Int, String]](fact.snd)
+                      deps.add(Left(param))
+                      val to = invoke.getReturnValue(0)
+                      val factNum = domain.add(Pair.make(Left(to), deps))
+                      result.add(factNum)
+                    }
+                  }
+                }
+              case _ =>
+            }
+            result
+          }
+        case _ => IdentityFlowFunction.identity
+      }
     }
 
     /**
@@ -87,63 +101,144 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
           || instr.isInstanceOf[EachElementGetInstruction]) {
           // do nothing
         } else instr match {
-          case lookup: PrototypeLookup =>  // 4-5 -> 32
+          case lookup: PrototypeLookup =>
             val from = lookup.getUse(0)
-            val to = lookup.getDef(0)
-            val factNum = domain.add(Pair.make(Left(to), fact.snd))
-            result.add(factNum)
+            fact.fst match {
+              case Left(i) =>
+                if (i == from || i == 0) {
+                  val to = lookup.getDef(0)
+                  val factNum = domain.add(Pair.make(Left(to), fact.snd))
+                  result.add(factNum)
+                }
+              case _ =>
+            }
           case readInstr: AstGlobalRead =>
             val from = readInstr.getGlobalName
-            val to = readInstr.getDef
-            val deps = new HashSet[Either[Int, String]](fact.snd)
-            deps.add(Right(from))
-            val factNum = domain.add(Pair.make(Left(to), deps))
-            result.add(factNum)
+            fact.fst match {
+              case Right(s) =>
+                val to = readInstr.getDef
+                if (s == from) {
+                  val deps = new HashSet[Either[Int, String]](fact.snd)
+                  deps.add(Right(from))
+                  val factNum = domain.add(Pair.make(Left(to), deps))
+                  result.add(factNum)
+                } else {
+                  result.add(domain.add(Pair.make(Left(to), Collections.singleton(Right(from)))))
+                }
+              case _ =>
+            }
           case writeInstr: AstGlobalWrite =>
-            val to = writeInstr.getGlobalName
-            val factNum = domain.add(Pair.make(Right(to), fact.snd))
-            result.add(factNum)
+            val from = writeInstr.getVal();
+            fact.fst match {
+              case Left(i) =>
+                if (i == from || i == 0) {
+                  val to = writeInstr.getGlobalName
+                  val factNum = domain.add(Pair.make(Right(to), fact.snd))
+                  result.add(factNum)
+                }
+              case _ =>
+            }
           case getInstr: SSAGetInstruction =>
             val from = getInstr.getRef
-            val to = getInstr.getDef
-            val deps = new HashSet[Either[Int, String]](fact.snd)
-            deps.add(Left(from))
-            if (!getInstr.isStatic) {
-              deps.add(Right("\"" + getInstr.getDeclaredField.getName + "\""))
+            fact.fst match {
+              case Left(i) =>
+                if (i == from || i == 0) {
+                  val to = getInstr.getDef
+                  val deps = new HashSet[Either[Int, String]](fact.snd)
+                  deps.add(Left(from))
+                  if (!getInstr.isStatic) {
+                    deps.add(Right("\"" + getInstr.getDeclaredField.getName + "\""))
+                  }
+                  val factNum = domain.add(Pair.make(Left(to), deps))
+                  result.add(factNum)
+                }
+              case _ =>
             }
-            val factNum = domain.add(Pair.make(Left(to), deps))
-            result.add(factNum)
           case putInstr: SSAPutInstruction =>
             if (putInstr.getNumberOfUses > 1) {
               val from = putInstr.getUse(1)
-              val to = putInstr.getUse(0)
-              val factNum = domain.add(Pair.make(Left(to), Collections.singleton(Left(from))))
-              result.add(factNum)
+              fact.fst match {
+                case Left(i) =>
+                  if (i == from || i == 0) {
+                    val to = putInstr.getUse(0)
+                    val deps = new HashSet[Either[Int, String]](fact.snd)
+                    deps.add(Left(from))
+                    deps.add(Right("\"" + putInstr.getDeclaredField.getName + "\""))
+                    val factNum = domain.add(Pair.make(Left(to), deps))
+                    result.add(factNum)
+                  }
+                case _ =>
+              }
             }
           case write: JavaScriptPropertyWrite =>
             val from = write.getUse(2)
-            val to = write.getObjectRef
-            val factNum = domain.add(Pair.make(Left(to), Collections.singleton(Left(from))))
-            result.add(factNum)
+            fact.fst match {
+              case Left(i) =>
+                if (i == from || i == 0) {
+                  val to = write.getObjectRef
+                  val deps = new HashSet[Either[Int, String]](fact.snd)
+                  deps.add(Left(from))
+                  deps.add(Left(write.getMemberRef))
+                  val factNum = domain.add(Pair.make(Left(to), deps))
+                  result.add(factNum)
+                }
+              case _ =>
+            }
           case read: JavaScriptPropertyRead =>
             val from = read.getObjectRef
-            val to = read.getDef
-            val factNum = domain.add(Pair.make(Left(to), Collections.singleton(Left(from))))
-            result.add(factNum)
+            fact.fst match {
+              case Left(i) =>
+                if (i == from || i == 0) {
+                  val to = read.getDef
+                  val deps = new HashSet[Either[Int, String]](fact.snd)
+                  deps.add(Left(from))
+                  deps.add(Left(read.getMemberRef))
+                  val factNum = domain.add(Pair.make(Left(to), deps))
+                  result.add(factNum)
+                }
+              case _ =>
+            }
           case _: SSAReturnInstruction => // move the kill statement to the end of the function
           case _: SSABinaryOpInstruction =>
             val from1 = instr.getUse(0)
             val from2 = instr.getUse(1)
             val to = instr.getDef
-            if (from1 == fact.fst || from2 == fact.fst) result.add(domain.add(Pair.make(Left(to), fact.snd)))
-            if (symTable.isConstant(from1)) result.add(domain.add(Pair.make(Left(to), Collections.singleton(Left(from1)))))
-            if (symTable.isConstant(from2)) result.add(domain.add(Pair.make(Left(to), Collections.singleton(Left(from2)))))
+            fact.fst match {
+              case Left(i) =>
+                if (i == 0) {
+                  val deps = new HashSet[Either[Int, String]]()
+                  deps.add(Left(from1))
+                  deps.add(Left(from2))
+                  result.add(domain.add(Pair.make(Left(to), deps)))
+                }
+                if (i == from1 || i == from2) {
+                  val to = instr.getDef
+                  result.add(domain.add(Pair.make(Left(to), fact.snd)))
+                }
+                if (symTable.isConstant(from1)) {
+                  result.add(domain.add(Pair.make(Left(to), Collections.singleton(Left(from1)))))
+                }
+                if (symTable.isConstant(from2)) {
+                  result.add(domain.add(Pair.make(Left(to), Collections.singleton(Left(from2)))))
+                }
+              case _ =>
+            }
           case _: SSAUnaryOpInstruction =>
             val from1 = instr.getUse(0)
-            val to = instr.getDef
-
-            val factNum = domain.add(Pair.make(Left(to), Collections.singleton(Left(from1))))
-            result.add(factNum)
+            fact.fst match {
+              case Left(i) =>
+                val to = instr.getDef
+                if (i == from1 || i == 0) {
+                  val deps = new HashSet[Either[Int, String]](fact.snd)
+                  deps.add(Left(from1))
+                  val factNum = domain.add(Pair.make(Left(to), deps))
+                  result.add(factNum)
+                }
+                if (symTable.isConstant(from1)) {
+                  result.add(domain.add(Pair.make(Left(to), Collections.singleton(Left(from1)))))
+                }
+              case _ =>
+            }
           case _ => //          throw new RuntimeException(instr.toString() + ", " + instr.getClass().toString());
             System.out.println("Unhandled getNormalFlowFunction: " + instr.toString + ", " + instr.getClass.toString)
         }

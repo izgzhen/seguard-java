@@ -97,4 +97,9 @@ class JsTest {
     mergeFiles(new File("src/test/resources/new-example3.js"), new File("src/test/resources/example3.js"), new File("src/test/resources/new-example3-entrypoints.js"))
     testExampleJS("src/test/resources/new-example3.js")
   }
+
+  @Test
+  def testSimpleJS(): Unit = {
+    testExampleJS("src/test/resources/simple.js")
+  }
 }
