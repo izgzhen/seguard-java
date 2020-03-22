@@ -1,10 +1,14 @@
-add
-Lexample.js
-[call]f
+[const]global Function
 [const]1.0
+f
+[call]f
+[const]global __WALA__int3rnal__global
+[const]global h
+g
+$$undefined
+[const]global f
+add
 [call]g
 [call]h
-f
-g
 h
-$$undefined
+Lexample.js

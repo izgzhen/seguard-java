@@ -1,12 +1,15 @@
-[const]execSync-[DATAFLOW]->[call][const]execSync
-[const][const]sfdx-[DATAFLOW]->add
 [const]execSfdx-[DATAFLOW]->[call][const]execSfdx
+[const]"prototype"-[DATAFLOW]->[call][const]execSync
 add-[DATAFLOW]->[call][const]execSync
+[const]add-[DATAFLOW]->[call][const]execSync
 [call][const]execSync-[DATAFLOW]->[call][const]toString
-[const][const]--targetusername-[DATAFLOW]->[call][const]execSync
 [const]sfdx-[DATAFLOW]->add
 [const]--targetusername-[DATAFLOW]->add
 [const][const]sfdx-[DATAFLOW]->[call][const]execSync
+[const]execSync-[DATAFLOW]->[call][const]execSync
+[const]add-[DATAFLOW]->add
+[const][const]sfdx-[DATAFLOW]->add
+[const]"prototype"-[DATAFLOW]->add
 add-[DATAFLOW]->add
 Lnew-example3.js-[CALL]->$SfdxUtils$execSfdx$
 [const]toString-[DATAFLOW]->[call][const]toString
@@ -15,3 +18,5 @@ Lnew-example3.js-[CALL]->$SfdxUtils$
 [const][const]--targetusername-[DATAFLOW]->add
 [const]undefined-[DATAFLOW]->ne
 require-[DATAFLOW]->[call]require
+[const][const]--targetusername-[DATAFLOW]->[call][const]execSync
+[const][const]execSfdx-[DATAFLOW]->[call][const]execSfdx

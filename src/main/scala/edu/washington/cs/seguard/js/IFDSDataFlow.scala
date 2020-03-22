@@ -50,6 +50,7 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
      * flow function from call node to return node when there are no targets for the call site; not a case we are expecting
      */
     override def getCallNoneToReturnFlowFunction(src: BasicBlockInContext[IExplodedBasicBlock], dest: BasicBlockInContext[IExplodedBasicBlock]): IUnaryFlowFunction = { // if we're missing callees, just keep what information we have
+      // TODO: imprecision for both application API and platform API
       val instr = src.getDelegate.getInstruction
       instr match {
         case invoke:JavaScriptInvoke =>
