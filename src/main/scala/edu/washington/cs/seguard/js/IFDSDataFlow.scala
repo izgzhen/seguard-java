@@ -62,6 +62,7 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
                 if (invoke.getNumberOfReturnValues > 1) {
                   for(paramIdx <- 1 until invoke.getNumberOfPositionalParameters){
                     val param = invoke.getUse(paramIdx)
+                    // if i is one of the params of the function call
                     if (param == i) {
                       val deps = new util.HashSet[Either[Int, String]](fact.snd)
                       deps.add(Left(param))
@@ -128,7 +129,7 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
               case _ =>
             }
           case writeInstr: AstGlobalWrite =>
-            val from = writeInstr.getVal();
+            val from = writeInstr.getVal;
             fact.fst match {
               case Left(i) =>
                 if (i == from || i == 0) {
