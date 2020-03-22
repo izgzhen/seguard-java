@@ -1,44 +1,66 @@
-[call][const]from
-[call][const]exports
-npm_package_description
-[const][get]paths
-[call]require
-[get]constructor
-[call][const]toString
-[const]createDecipher
-decode
-$$undefined
-process[env]
-[const]from
-[call][const]_compile
-[const]update
-[const]_compile
-[call][const]update
-[const]2e2f746573742f64617461
-decoded
-[call][get]constructor
-add
-Buffer
-[const]crypto
-a
-process
-[const]
 e
-f
-module
 require
-process[env][npm_package_description]
 [const]hex
-[const]aes256
-module[constructor]
-[call][const]createDecipher
+[const]"npm_package_description"
+[const]global $$undefined
 module[paths]
-[call]e
-[const]final
-Leventstream.js
+process[env]
+[const]global f
+[const][call][const]final
 [const]utf8
-[call][const]final
-[call][call]e
-[call]decode
-[const]exports
+module
+[const]update
+[const]
+[const]decoded
+process
+[const]final
+[const]2e2f746573742f64617461
+[const]global a
+Buffer
+[call][const]_compile
+f
+[const]"env"
+[const][const]1.0
+[const]global __WALA__int3rnal__global
+a
+[call][const]update
+[const]global Buffer
+[const]"paths"
 [const]toString
+[call][const]final
+decode
+[const]global decode
+[const]global e
+[const]_compile
+[const]global require
+[const][get]paths
+[call][const]from
+[const]crypto
+[call][const]createDecipher
+$$undefined
+[const]exports
+module[constructor]
+[call]require
+process[env][npm_package_description]
+[const][const]0.0
+[call][call]e
+[call][const]exports
+[const]createDecipher
+[call]e
+[const]global npm_package_description
+[call]decode
+Leventstream.js
+[const]aes256
+[const]global decoded
+[const]global module
+[const]"constructor"
+add
+[const][const]7.0
+[const][const]paths
+[const]global process
+[const]from
+[call][get]constructor
+[call][const]toString
+decoded
+npm_package_description
+[get]constructor

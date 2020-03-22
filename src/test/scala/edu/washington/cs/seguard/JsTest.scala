@@ -58,7 +58,7 @@ class JsTest {
     val cg = JSFlowGraph.addCallGraph(g, jsPath)
     JSFlowGraph.addDataFlowGraph(g, cg)
     val labels = g.getNodes.map(i => g.getNodeLabel(i))
-//    compareSetOfStrings(jsPath.replace(".js", ".nodes.txt"), labels)
+    compareSetOfStrings(jsPath.replace(".js", ".nodes.txt"), labels)
     compareSetOfStrings(jsPath.replace(".js", ".edges.txt"), g.getEdges.map { case (u, v) =>
       val lu = g.getNodeLabel(u)
       val lv = g.getNodeLabel(v)
