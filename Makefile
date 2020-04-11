@@ -19,7 +19,7 @@ init: check $(TEST_JAVA_CLASSES)
 	mvn -q package
 	mvn -q clean compile assembly:single
 
-SRC_FILES := $(shell find src/ -type f -name '*.scala') $(shell find src/ -type f -name '*.java')
+SRC_FILES := $(shell find src/ -type f -name '*.scala') $(shell find src/ -type f -name '*.java') pom.xml
 
 $(JAR): $(SRC_FILES)
 	mvn -q clean compile assembly:single -o
