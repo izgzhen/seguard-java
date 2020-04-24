@@ -275,9 +275,6 @@ object JSFlowGraph {
         }
 
         if (instruction != null) {
-          logger.info("======= Instruction of BB " + node.getDelegate.getNumber + " of method " + node.getNode + "==============")
-          logger.info(instruction + ": " + instruction.toString(symTable))
-
           abstractInstruction(node.getNode.getDU, symTable, instruction) match {
             case Some(u) => {
               // DefUse based analysis

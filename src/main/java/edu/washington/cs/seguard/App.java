@@ -8,7 +8,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.log4j.PropertyConfigurator;
 
-import edu.washington.cs.seguard.core.FlowGraph;
 import edu.washington.cs.seguard.js.JSFlowGraph;
 import edu.washington.cs.seguard.pe.JimpleRewriter;
 import edu.washington.cs.seguard.util.StatManager;
