@@ -1,76 +1,72 @@
-[const]global f-[DATAFLOW]->[call][call]e
-[const]global $$undefined-[DATAFLOW]->[call][const]from
-[const]global module-[DATAFLOW]->[call][const]_compile
-[const]global e-[DATAFLOW]->[call]e
-Buffer-[DATAFLOW]->[call][const]from
-[const][get]paths-[DATAFLOW]->[call][const]_compile
-[const]-[DATAFLOW]->[call][const]_compile
-[const]global module-[DATAFLOW]->module[paths]
-[const]global process-[DATAFLOW]->process[env]
-npm_package_description-[DATAFLOW]->[call][const]createDecipher
-[const]global Buffer-[DATAFLOW]->[call][const]from
-[call][const]final-[DATAFLOW]->add
-[const]hex-[DATAFLOW]->[call][const]from
-[const]global f-[DATAFLOW]->[call][const]exports
-[const]global process-[DATAFLOW]->[call][const]createDecipher
-[get]constructor-[DATAFLOW]->[call][get]constructor
-[const]"paths"-[DATAFLOW]->[call][const]_compile
-[const]global npm_package_description-[DATAFLOW]->[call][const]createDecipher
-[const]utf8-[DATAFLOW]->[call][const]final
-decode-[DATAFLOW]->[call]decode
-[const]"npm_package_description"-[DATAFLOW]->[call][const]createDecipher
-[const]toString-[DATAFLOW]->[call][const]toString
+global __WALA__int3rnal__global-[DATAFLOW]->decode
+toString-[DATAFLOW]->toString
+global module-[DATAFLOW]->constructor
+hex-[DATAFLOW]->update
+createDecipher-[DATAFLOW]->createDecipher
+e-[DATAFLOW]->e
+global __WALA__int3rnal__global-[DATAFLOW]->e
+utf8-[DATAFLOW]->final
+utf8-[DATAFLOW]->update
+global decode-[DATAFLOW]->decode
+from-[DATAFLOW]->from
+global Buffer-[DATAFLOW]->createDecipher
+"constructor"-[DATAFLOW]->constructor
+-[DATAFLOW]->_compile
+global Buffer-[DATAFLOW]->from
+constructor-[DATAFLOW]->_compile
+final-[DATAFLOW]->_compile
+global require-[DATAFLOW]->require
+final-[DATAFLOW]->add
+"npm_package_description"-[DATAFLOW]->createDecipher
+2e2f746573742f64617461-[DATAFLOW]->decode
 Leventstream.js-[CALL]->decode
-[const]"constructor"-[DATAFLOW]->[call][get]constructor
-[const]createDecipher-[DATAFLOW]->[call][const]createDecipher
-[const]global Buffer-[DATAFLOW]->[call][const]createDecipher
-[call]require-[DATAFLOW]->[call][const]createDecipher
-[const][const]paths-[DATAFLOW]->[call][const]exports
-e-[DATAFLOW]->[call]e
-[call][get]constructor-[DATAFLOW]->[call][const]_compile
-[const]global require-[DATAFLOW]->[call]require
-[const]global __WALA__int3rnal__global-[DATAFLOW]->[call]e
-[const]global module-[DATAFLOW]->[call][get]constructor
-[const]hex-[DATAFLOW]->[call][const]update
-[const]2e2f746573742f64617461-[DATAFLOW]->[call]decode
-[const]global __WALA__int3rnal__global-[DATAFLOW]->[call]require
-[const][const]1.0-[DATAFLOW]->[call][const]exports
-[call][const]createDecipher-[DATAFLOW]->[call][const]update
-[const]from-[DATAFLOW]->[call][const]from
-[const]-[DATAFLOW]->[call][call]e
-[const]"env"-[DATAFLOW]->process[env][npm_package_description]
-decoded-[DATAFLOW]->[call][const]_compile
-f-[DATAFLOW]->[call][const]exports
-a-[DATAFLOW]->[call][call]e
-[call][get]constructor-[DATAFLOW]->[call][const]exports
-[const]_compile-[DATAFLOW]->[call][const]_compile
+createDecipher-[DATAFLOW]->update
+global module-[DATAFLOW]->module[constructor]
+1.0-[DATAFLOW]->exports
+global module-[DATAFLOW]->_compile
+aes256-[DATAFLOW]->createDecipher
+constructor-[DATAFLOW]->exports
+global process-[DATAFLOW]->process[env][npm_package_description]
+global __WALA__int3rnal__global-[DATAFLOW]->require
+global e-[DATAFLOW]->e
+global f-[DATAFLOW]->e
+global f-[DATAFLOW]->exports
+from-[DATAFLOW]->toString
+paths-[DATAFLOW]->_compile
+hex-[DATAFLOW]->from
+global a-[DATAFLOW]->e
+crypto-[DATAFLOW]->require
+exports-[DATAFLOW]->exports
+global $$undefined-[DATAFLOW]->from
 decoded-[DATAFLOW]->add
-[const]decoded-[DATAFLOW]->[call][const]_compile
-[const]global process-[DATAFLOW]->process[env][npm_package_description]
-[const]global decoded-[DATAFLOW]->add
-f-[DATAFLOW]->[call][call]e
-[const]exports-[DATAFLOW]->[call][const]exports
-[const][const]paths-[DATAFLOW]->[call][const]_compile
-[const]crypto-[DATAFLOW]->[call]require
-[const]"paths"-[DATAFLOW]->[call][const]exports
-[const]global decode-[DATAFLOW]->[call]decode
-[const][const]7.0-[DATAFLOW]->[call]e
-[call]decode-[DATAFLOW]->[call]require
-[const][call][const]final-[DATAFLOW]->[call][const]_compile
-[call][const]createDecipher-[DATAFLOW]->[call][const]final
-[const]"env"-[DATAFLOW]->[call][const]createDecipher
-[const]final-[DATAFLOW]->[call][const]final
-[const]global module-[DATAFLOW]->[call][const]exports
-[call]e-[DATAFLOW]->[call][call]e
-require-[DATAFLOW]->[call]require
-[const]global module-[DATAFLOW]->module[constructor]
-[call][const]from-[DATAFLOW]->[call][const]toString
-[const]global a-[DATAFLOW]->[call][call]e
-[const]global decoded-[DATAFLOW]->[call][const]_compile
-[const]global Buffer-[DATAFLOW]->process[env][npm_package_description]
-[const]utf8-[DATAFLOW]->[call][const]update
-[const]global __WALA__int3rnal__global-[DATAFLOW]->[call]decode
-[const][const]0.0-[DATAFLOW]->[call][const]update
-[const]aes256-[DATAFLOW]->[call][const]createDecipher
-[const][get]paths-[DATAFLOW]->[call][const]exports
-[const]update-[DATAFLOW]->[call][const]update
+global module-[DATAFLOW]->exports
+decode-[DATAFLOW]->require
+global process-[DATAFLOW]->createDecipher
+global process-[DATAFLOW]->process[env]
+decoded-[DATAFLOW]->_compile
+require-[DATAFLOW]->createDecipher
+Buffer-[DATAFLOW]->from
+0.0-[DATAFLOW]->update
+global decoded-[DATAFLOW]->_compile
+_compile-[DATAFLOW]->_compile
+"env"-[DATAFLOW]->createDecipher
+constructor-[DATAFLOW]->constructor
+"paths"-[DATAFLOW]->_compile
+global decoded-[DATAFLOW]->add
+7.0-[DATAFLOW]->e
+paths-[DATAFLOW]->exports
+"paths"-[DATAFLOW]->exports
+f-[DATAFLOW]->exports
+global module-[DATAFLOW]->module[paths]
+-[DATAFLOW]->e
+final-[DATAFLOW]->final
+update-[DATAFLOW]->update
+f-[DATAFLOW]->e
+require-[DATAFLOW]->require
+global npm_package_description-[DATAFLOW]->createDecipher
+decode-[DATAFLOW]->decode
+"env"-[DATAFLOW]->process[env][npm_package_description]
+npm_package_description-[DATAFLOW]->createDecipher
+global Buffer-[DATAFLOW]->process[env][npm_package_description]
+a-[DATAFLOW]->e
+createDecipher-[DATAFLOW]->final

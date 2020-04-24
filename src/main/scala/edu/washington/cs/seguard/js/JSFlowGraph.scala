@@ -12,14 +12,13 @@ import com.ibm.wala.examples.analysis.js.JSCallGraphBuilderUtil
 import com.ibm.wala.ipa.callgraph.{CGNode, CallGraph}
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
 import com.ibm.wala.ssa.{DefUse, SSABinaryOpInstruction, SSAConditionalBranchInstruction, SSAGetInstruction, SSAGotoInstruction, SSAInstruction, SSANewInstruction, SSAPhiInstruction, SSAReturnInstruction, SSAUnaryOpInstruction, SymbolTable}
-import com.ibm.wala.types.FieldReference
 import com.semantic_graph.writer.GraphWriter
 import edu.washington.cs.seguard.SeGuardEdgeAttr.SeGuardEdgeAttr
 import edu.washington.cs.seguard.SeGuardNodeAttr.SeGuardNodeAttr
 import edu.washington.cs.seguard.{EdgeType, NodeType, SeGuardEdgeAttr, SeGuardNodeAttr}
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
-import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters._
 
 object JSFlowGraph {
@@ -110,7 +109,7 @@ object JSFlowGraph {
    * @param i SSA identifier
    * @return
    */
-  def getDef(defUse: DefUse, symbolTable: SymbolTable, i: Int): Option[String] = {
+  def getDef(defUse: DefUse, symbolTable: SymbolTable, i: Int): Option[(String, Option[String])] = {
     defUse.getDef(i) match {
       case null =>
         if (symbolTable.isConstant(i)) {
@@ -118,7 +117,7 @@ object JSFlowGraph {
           if (v == null) {
             None
           } else {
-            Some("[const]" + v.toString.trim())
+            Some(v.toString.trim(), Some("Const"))
           }
         } else {
           None
@@ -139,9 +138,9 @@ object JSFlowGraph {
    * @param defUse
    * @param symTable
    * @param instruction
-   * @return
+   * @return optional pair of the node label and another optional tag
    */
-  def abstractInstruction(defUse: DefUse, symTable: SymbolTable, instruction: SSAInstruction): Option[String] = {
+  def abstractInstruction(defUse: DefUse, symTable: SymbolTable, instruction: SSAInstruction): Option[(String, Option[String])] = {
     instruction match {
       case read: AstGlobalRead => {
         var ret = read.getGlobalName
@@ -151,18 +150,21 @@ object JSFlowGraph {
             ret == "Function") { // point to global context
           None
         } else {
-          Some(ret)
+          Some((ret, None))
         }
       }
       case invoke:JavaScriptInvoke => {
         getDef(defUse, symTable, invoke.getUse(0)) match {
-          case Some(f) => Some("[call]" + f)
+          case Some((f, optTag)) => Some(f, optTag match {
+            case None => Some("Call")
+            case Some(tag) => Some(tag + ",Call")
+          })
           case None => None
         }
       }
-      case binop:SSABinaryOpInstruction => Some(binop.getOperator.toString)
-      case uop:SSAUnaryOpInstruction => Some("[uop]" + uop.getOpcode.toString)
-      case get:SSAGetInstruction => Some("[get]" + get.getDeclaredField.getName.toString)
+      case binop:SSABinaryOpInstruction => Some(binop.getOperator.toString, None)
+      case uop:SSAUnaryOpInstruction => Some(uop.getOpcode.toString, Some("Uop"))
+      case get:SSAGetInstruction => Some(get.getDeclaredField.getName.toString, Some("Get"))
       case _:JavaScriptPropertyWrite => None // FIXME: how to retrieve property name?
       case _:JavaScriptPropertyRead => None // FIXME: how to retrieve property name?
       case _:AstGlobalWrite => None
@@ -192,25 +194,30 @@ object JSFlowGraph {
     }
   }
 
+  private def optTagAttrs(optTag: Option[String]) =
+    optTag match {
+      case None => Map()
+      case Some(tag) => Map(SeGuardNodeAttr.TAG -> tag)
+    }
+
+  private val logger = LoggerFactory.getLogger(JSFlowGraph.getClass)
+
   def addDataFlowGraph(dot: GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr], cg: CallGraph) {
     // IFDS based data-flow analysis
     val icfg = ExplodedInterproceduralCFG.make(cg)
     val dataflow = new IFDSDataFlow(icfg)
     val results = dataflow.analyze
     val superGraph = dataflow.getSupergraph
-    val aliasMap: HashMap[String, HashMap[Int, Int]] = new HashMap();
-    val globalVarMap: HashMap[String, HashMap[Int, String]] = new HashMap();
+    val aliasMap: mutable.Map[String, mutable.Map[Int, Int]] = mutable.HashMap()
+    val globalVarMap: mutable.Map[String, mutable.Map[Int, String]] = mutable.HashMap()
 
     for (n <- superGraph.getProcedureGraph.asScala) {
       if (isApplicationNode(n)) {
-        var localAliasMap: HashMap[Int, Int] = new HashMap()
-//        println("====== Method " + n + " =======")
-//        println(n.getIR)
-//        println("===============================")
+        val localAliasMap: mutable.Map[Int, Int] = mutable.HashMap()
         // The IR we used here is in SSA form
-        for (instruction <- n.getIR().getInstructions()) {
+        for (instruction <- n.getIR.getInstructions) {
           if (instruction != null && instruction.isInstanceOf[PrototypeLookup]) {
-            localAliasMap.put(instruction.getDef(0), instruction.getUse(0))
+            localAliasMap.addOne(instruction.getDef(0), instruction.getUse(0))
           }
         }
         aliasMap.put(n.toString, localAliasMap);
@@ -256,9 +263,9 @@ object JSFlowGraph {
             val fromValues = v.flatMap(v => {
               v match {
                 case Left(i) => getDef(node.getNode.getDU, symTable, i)
-                case Right(s) => Some(s)
+                case Right(s) => Some(s, None)
               }
-            } : Option[String]).toSet
+            } : Option[(String, Option[String])]).toSet
             if (fromValues.nonEmpty) {
               Some((k, fromValues))
             } else {
@@ -268,16 +275,16 @@ object JSFlowGraph {
         }
 
         if (instruction != null) {
-//          println("======= Instruction of BB " + node.getDelegate.getNumber + " of method " + node.getNode + "==============")
-//          println(instruction, instruction.toString(symTable))
+          logger.info("======= Instruction of BB " + node.getDelegate.getNumber + " of method " + node.getNode + "==============")
+          logger.info(instruction + ": " + instruction.toString(symTable))
 
           abstractInstruction(node.getNode.getDU, symTable, instruction) match {
             case Some(u) => {
               // DefUse based analysis
-              var u_complete = u
+              var (u_complete, optTag) = u
               val namespace = node.getNode.toString // name of the function where these variables are defined
               if (!globalVarMap.contains(namespace)) {
-                globalVarMap.put(namespace, new HashMap())
+                globalVarMap.put(namespace, mutable.HashMap())
               }
               instruction match {
                 case _: AstGlobalRead => // global variable
@@ -300,7 +307,7 @@ object JSFlowGraph {
                   }
                 case _ =>
               }
-              val uId = dot.createNode(u_complete, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString))
+              val uId = dot.createNode(u_complete, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString) ++ optTagAttrs(optTag))
               var iu = 0
               while (iu < instruction.getNumberOfUses) {
                 val use = instruction.getUse(iu)
@@ -308,7 +315,8 @@ object JSFlowGraph {
                 if (defined != null) {
                   val defineNode = abstractInstruction(node.getNode.getDU, symTable, defined)
                   if (defineNode.isDefined) {
-                    val vId = dot.createNode(defineNode.get, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString))
+                    val (nodeName, optTag) = defineNode.get
+                    val vId = dot.createNode(nodeName, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString) ++ optTagAttrs(optTag))
                     dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                   }
                 }
@@ -317,12 +325,12 @@ object JSFlowGraph {
                   if (v.startsWith("L")) {
                     v = getMethodName(v).get
                   }
-                  val vId = dot.createNode("[const]" + v.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
+                  val vId = dot.createNode(v.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
                   dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                 }
                 if (dataFlowDeps.contains(Left(use))) {
-                  for (dep <- dataFlowDeps(Left(use))) {
-                    val vId = dot.createNode("[const]" + dep.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
+                  for ((dep, optTag) <- dataFlowDeps(Left(use))) {
+                    val vId = dot.createNode(dep.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString) ++ optTagAttrs(optTag))
                     dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                   }
                 }

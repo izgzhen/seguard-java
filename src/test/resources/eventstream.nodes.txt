@@ -1,66 +1,51 @@
-e
-require
-[const]hex
-[const]"npm_package_description"
-[const]global $$undefined
+hex
+"env"
 module[paths]
 process[env]
-[const]global f
-[const][call][const]final
-[const]utf8
-module
-[const]update
-[const]
-[const]decoded
-process
-[const]final
-[const]2e2f746573742f64617461
-[const]global a
-Buffer
-[call][const]_compile
-f
-[const]"env"
-[const][const]1.0
-[const]global __WALA__int3rnal__global
-a
-[call][const]update
-[const]global Buffer
-[const]"paths"
-[const]toString
-[call][const]final
-decode
-[const]global decode
-[const]global e
-[const]_compile
-[const]global require
-[const][get]paths
-[call][const]from
-[const]crypto
-[call][const]createDecipher
-$$undefined
-[const]exports
-module[constructor]
-[call]require
-process[env][npm_package_description]
-[const][const]0.0
-[call][call]e
-[call][const]exports
-[const]createDecipher
-[call]e
-[const]global npm_package_description
-[call]decode
-Leventstream.js
-[const]aes256
-[const]global decoded
-[const]global module
-[const]"constructor"
+utf8
+global a
+toString
 add
-[const][const]7.0
-[const][const]paths
-[const]global process
-[const]from
-[call][get]constructor
-[call][const]toString
+7.0
 decoded
+global __WALA__int3rnal__global
+
+e
+"paths"
+"npm_package_description"
+global process
+module
+require
+global npm_package_description
+process
+global Buffer
+Buffer
+f
+0.0
+global $$undefined
+global e
+a
+global module
+crypto
+constructor
+exports
+global require
+createDecipher
+paths
+global decode
+decode
+final
+2e2f746573742f64617461
+$$undefined
+module[constructor]
+1.0
+process[env][npm_package_description]
+from
+_compile
+"constructor"
+aes256
+Leventstream.js
+update
+global decoded
 npm_package_description
-[get]constructor
+global f

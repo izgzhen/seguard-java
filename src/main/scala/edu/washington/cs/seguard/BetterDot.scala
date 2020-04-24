@@ -31,11 +31,13 @@ object SeGuardNodeAttr extends Enumeration with Serializable {
     type SeGuardNodeAttr = Value
     val DOMAIN = Value("domain")
     val TYPE = Value("type")
+    val TAG = Value("tag")
 }
 
 object SeGuardEdgeAttr extends Enumeration with Serializable {
     type SeGuardEdgeAttr = Value
     val TYPE = Value("type")
+    val TAG = Value("tag")
 }
 //
 //object GraphBackend {

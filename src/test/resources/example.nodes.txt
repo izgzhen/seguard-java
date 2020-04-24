@@ -1,14 +1,11 @@
-[const]global Function
-[const]1.0
+global __WALA__int3rnal__global
+global h
 f
-[call]f
-[const]global __WALA__int3rnal__global
-[const]global h
+global Function
 g
 $$undefined
-[const]global f
+1.0
 add
-[call]g
-[call]h
+global f
 h
 Lexample.js
