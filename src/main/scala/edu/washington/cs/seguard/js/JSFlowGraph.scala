@@ -51,9 +51,12 @@ object JSFlowGraph {
     }
   }
 
+  // This can't process name like $$jscomp$generator$Engine_$$throw_$ meaningfully
   private def toFunctionCall(name: String): String = {
     val (dollars, rest) = splitAtLast(name.stripPrefix("$").stripSuffix("$"), '$')
-    dollars + rest.replace("$", ".") + "();\n"
+    val ret = dollars + rest.replace("$$", ".prototype.").replace("$", ".") + "();\n"
+    assert(!ret.contains(".."));
+    ret
   }
 
   def getAllMethods(jsPath: String, outputPath: String): Unit = {

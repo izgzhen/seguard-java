@@ -241,8 +241,12 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
                 }
               case _ =>
             }
-          case _ => //          throw new RuntimeException(instr.toString() + ", " + instr.getClass().toString());
-            System.out.println("Unhandled getNormalFlowFunction: " + instr.toString + ", " + instr.getClass.toString)
+          case _ =>
+            val instrString = instr.toString
+            if (!instrString.contains("throw ") && !instrString.contains("is instance of ") &
+                !instrString.contains("isDefined")) {
+              System.out.println("Unhandled getNormalFlowFunction: " + instrString + ", " + instr.getClass.toString)
+            }
         }
         if (!instr.isInstanceOf[SSAReturnInstruction]) {
           result.add(d1)
