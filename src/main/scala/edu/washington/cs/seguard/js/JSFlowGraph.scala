@@ -247,7 +247,7 @@ object JSFlowGraph {
         // Each node corresponds to a _single_ instruction
         val instruction = node.getDelegate.getInstruction
 
-        val iFlowDeps = mutable.HashMap[AbsVar, mutable.Set[AbsVar]]()
+        val iFlowDeps = mutable.HashMap[AbsVar, AbsVar]()
 
         // Collect facts at current node from solution
         val solution = results.getResult(node)
@@ -257,17 +257,16 @@ object JSFlowGraph {
           // fact remapped back to abstract domain: a pair of (dependent: Int, dependencies: Set[Int])
           // each value is an Int due to SSA construction
           val absValues = dataflow.problem.getDomain.getMappedObject(fact)
-          iFlowDeps.getOrElseUpdate(absValues.fst, mutable.Set()).addAll(absValues.snd.asScala)
+          iFlowDeps.put(absValues.fst, absValues.snd)
         }
 
         val dataFlowDeps = iFlowDeps.flatMap {
           case (k, v) => {
-            val fromValues = v.flatMap(v => {
+            val fromValues =
               v match {
                 case AbsVar.Local(i) => getDef(node.getNode.getDU, symTable, i)
                 case AbsVar.Global(s) => Some(s, None)
               }
-            } : Option[(String, Option[String])]).toSet
             if (fromValues.nonEmpty) {
               Some((k, fromValues))
             } else {
