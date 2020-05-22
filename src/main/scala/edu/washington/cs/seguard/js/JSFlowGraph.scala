@@ -263,9 +263,13 @@ object JSFlowGraph {
         val dataFlowDeps = iFlowDeps.flatMap {
           case (k, v) => {
             val fromValues =
-              v match {
-                case AbsVar.Local(i) => getDef(node.getNode.getDU, symTable, i)
-                case AbsVar.Global(s) => Some(s, None)
+              if (v != null) {
+                v match {
+                  case AbsVar.Local(i) => getDef(node.getNode.getDU, symTable, i)
+                  case AbsVar.Global(s) => Some(s, None)
+                }
+              } else {
+                None
               }
             if (fromValues.nonEmpty) {
               Some((k, fromValues))
