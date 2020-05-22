@@ -8,45 +8,56 @@ import com.ibm.wala.ipa.cfg.BasicBlockInContext
 import com.ibm.wala.ipa.cfg.ExplodedInterproceduralCFG
 import com.ibm.wala.ssa._
 import com.ibm.wala.ssa.analysis.IExplodedBasicBlock
-import com.ibm.wala.util.CancelException
 import com.ibm.wala.util.collections.Pair
 import com.ibm.wala.util.intset.{IntSet, MutableMapping, MutableSparseIntSet}
 import java.util
-import java.util.{Collection, Collections, HashSet, Set}
+import java.util.{Collection, Collections, HashSet}
+
+sealed abstract class AbsVar extends Product with Serializable
+
+object AbsVar {
+  final case class Global(name: String) extends AbsVar
+
+  /**
+   * @param idx SSA index
+   */
+  final case class Local(idx: Int) extends AbsVar
+}
 
 class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
   final private val supergraph = ICFGSupergraph.make(icfg.getCallGraph)
   final private val domain = new DataFlowDomain
+  type Block = BasicBlockInContext[IExplodedBasicBlock]
 
   /**
    * controls numbering of putstatic instructions for use in tabulation
    * TODO: use sum type instead of Either
    */
   @SuppressWarnings(Array("serial")) class DataFlowDomain
-    extends MutableMapping[Pair[Either[Int, String], Set[Either[Int, String]]]]
-      with TabulationDomain[Pair[Either[Int, String], Set[Either[Int, String]]], BasicBlockInContext[IExplodedBasicBlock]] {
-    override def hasPriorityOver(p1: PathEdge[BasicBlockInContext[IExplodedBasicBlock]], p2: PathEdge[BasicBlockInContext[IExplodedBasicBlock]]): Boolean = { // don't worry about worklist priorities
+    extends MutableMapping[Pair[AbsVar, util.Set[AbsVar]]]
+      with TabulationDomain[Pair[AbsVar, util.Set[AbsVar]], Block] {
+    override def hasPriorityOver(p1: PathEdge[Block], p2: PathEdge[Block]): Boolean = { // don't worry about worklist priorities
       false
     }
   }
 
-  class DataFlowFunctions (val domain: DataFlowDomain) extends IPartiallyBalancedFlowFunctions[BasicBlockInContext[IExplodedBasicBlock]] {
+  class DataFlowFunctions (val domain: DataFlowDomain) extends IPartiallyBalancedFlowFunctions[Block] {
     /**
      * the flow function for flow from a callee to caller where there was no flow from caller to callee; just the identity function
      *
      * @see ReachingDefsProblem
      */
-    override def getUnbalancedReturnFlowFunction(src: BasicBlockInContext[IExplodedBasicBlock], dest: BasicBlockInContext[IExplodedBasicBlock]): IFlowFunction = IdentityFlowFunction.identity
+    override def getUnbalancedReturnFlowFunction(src: Block, dest: Block): IFlowFunction = IdentityFlowFunction.identity
 
     /**
      * flow function from caller to callee; just the identity function
      */
-    override def getCallFlowFunction(src: BasicBlockInContext[IExplodedBasicBlock], dest: BasicBlockInContext[IExplodedBasicBlock], ret: BasicBlockInContext[IExplodedBasicBlock]): IUnaryFlowFunction = IdentityFlowFunction.identity
+    override def getCallFlowFunction(src: Block, dest: Block, ret: Block): IUnaryFlowFunction = IdentityFlowFunction.identity
 
     /**
      * flow function from call node to return node when there are no targets for the call site; not a case we are expecting
      */
-    override def getCallNoneToReturnFlowFunction(src: BasicBlockInContext[IExplodedBasicBlock], dest: BasicBlockInContext[IExplodedBasicBlock]): IUnaryFlowFunction = { // if we're missing callees, just keep what information we have
+    override def getCallNoneToReturnFlowFunction(src: Block, dest: Block): IUnaryFlowFunction = { // if we're missing callees, just keep what information we have
       // TODO: imprecision for both application API and platform API
       val instr = src.getDelegate.getInstruction
       instr match {
@@ -56,16 +67,16 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
             val result = MutableSparseIntSet.makeEmpty
             result.add(d1)
             fact.fst match {
-              case Left(i) =>
+              case AbsVar.Local(i) =>
                 if (invoke.getNumberOfReturnValues > 1) {
                   for(paramIdx <- 1 until invoke.getNumberOfPositionalParameters){
                     val param = invoke.getUse(paramIdx)
                     // if i is one of the params of the function call
                     if (param == i) {
-                      val deps = new util.HashSet[Either[Int, String]](fact.snd)
-                      deps.add(Left(param))
+                      val deps = new util.HashSet[AbsVar](fact.snd)
+                      deps.add(AbsVar.Local(param))
                       val to = invoke.getReturnValue(0)
-                      val factNum = domain.add(Pair.make(Left(to), deps))
+                      val factNum = domain.add(Pair.make(AbsVar.Local(to), deps))
                       result.add(factNum)
                     }
                   }
@@ -82,12 +93,12 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
      * flow function from call node to return node at a call site when callees exist. We kill everything; surviving facts should
      * flow out of the callee
      */
-    override def getCallToReturnFlowFunction(src: BasicBlockInContext[IExplodedBasicBlock], dest: BasicBlockInContext[IExplodedBasicBlock]): IUnaryFlowFunction = KillEverything.singleton
+    override def getCallToReturnFlowFunction(src: Block, dest: Block): IUnaryFlowFunction = KillEverything.singleton
 
     /**
      * flow function for normal intraprocedural edges
      */
-    override def getNormalFlowFunction(src: BasicBlockInContext[IExplodedBasicBlock], dest: BasicBlockInContext[IExplodedBasicBlock]): IUnaryFlowFunction = {
+    override def getNormalFlowFunction(src: Block, dest: Block): IUnaryFlowFunction = {
       val symTable = src.getNode.getIR.getSymbolTable
       new IUnaryFlowFunction {
         override def getTargets(inputDomain: Int): IntSet = {
@@ -107,9 +118,9 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
               val lhs = lookup.getDef(0)
               val rhs = lookup.getUse(0)
               tainted match {
-                case Left(i) =>
+                case AbsVar.Local(i) =>
                   if (i == rhs || i == 0) {
-                    val factNum = domain.add(Pair.make(Left(lhs), taint))
+                    val factNum = domain.add(Pair.make(AbsVar.Local(lhs), taint))
                     result.add(factNum)
                   }
                   if (i != lhs) {
@@ -121,25 +132,25 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
             case readInstr: AstGlobalRead =>
               val from = readInstr.getGlobalName
               tainted match {
-                case Right(s) =>
+                case AbsVar.Global(s) =>
                   val to = readInstr.getDef
                   if (s == from) {
-                    val deps = new HashSet[Either[Int, String]](taint)
-                    deps.add(Right(from))
-                    val factNum = domain.add(Pair.make(Left(to), deps))
+                    val deps = new util.HashSet[AbsVar](taint)
+                    deps.add(AbsVar.Global(from))
+                    val factNum = domain.add(Pair.make(AbsVar.Local(to), deps))
                     result.add(factNum)
                   } else {
-                    result.add(domain.add(Pair.make(Left(to), Collections.singleton(Right(from)))))
+                    result.add(domain.add(Pair.make(AbsVar.Local(to), Collections.singleton(AbsVar.Global(from)))))
                   }
                 case _ =>
               }
             case writeInstr: AstGlobalWrite =>
               val from = writeInstr.getVal
               tainted match {
-                case Left(i) =>
+                case AbsVar.Local(i) =>
                   if (i == from || i == 0) {
                     val to = writeInstr.getGlobalName
-                    val factNum = domain.add(Pair.make(Right(to), taint))
+                    val factNum = domain.add(Pair.make(AbsVar.Global(to), taint))
                     result.add(factNum)
                   }
                 case _ =>
@@ -147,15 +158,15 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
             case getInstr: SSAGetInstruction =>
               val from = getInstr.getRef
               tainted match {
-                case Left(i) =>
+                case AbsVar.Local(i) =>
                   if (i == from || i == 0) {
                     val to = getInstr.getDef
-                    val deps = new HashSet[Either[Int, String]](taint)
-                    deps.add(Left(from))
+                    val deps = new util.HashSet[AbsVar](taint)
+                    deps.add(AbsVar.Local(from))
                     if (!getInstr.isStatic) {
-                      deps.add(Right("\"" + getInstr.getDeclaredField.getName + "\""))
+                      deps.add(AbsVar.Global("\"" + getInstr.getDeclaredField.getName + "\""))
                     }
-                    val factNum = domain.add(Pair.make(Left(to), deps))
+                    val factNum = domain.add(Pair.make(AbsVar.Local(to), deps))
                     result.add(factNum)
                   }
                 case _ =>
@@ -164,13 +175,13 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
               if (putInstr.getNumberOfUses > 1) {
                 val from = putInstr.getUse(1)
                 tainted match {
-                  case Left(i) =>
+                  case AbsVar.Local(i) =>
                     if (i == from || i == 0) {
                       val to = putInstr.getUse(0)
-                      val deps = new HashSet[Either[Int, String]](taint)
-                      deps.add(Left(from))
-                      deps.add(Right("\"" + putInstr.getDeclaredField.getName + "\""))
-                      val factNum = domain.add(Pair.make(Left(to), deps))
+                      val deps = new util.HashSet[AbsVar](taint)
+                      deps.add(AbsVar.Local(from))
+                      deps.add(AbsVar.Global("\"" + putInstr.getDeclaredField.getName + "\""))
+                      val factNum = domain.add(Pair.make(AbsVar.Local(to), deps))
                       result.add(factNum)
                     }
                   case _ =>
@@ -179,13 +190,13 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
             case write: JavaScriptPropertyWrite =>
               val from = write.getUse(2)
               tainted match {
-                case Left(i) =>
+                case AbsVar.Local(i) =>
                   if (i == from || i == 0) {
                     val to = write.getObjectRef
-                    val deps = new HashSet[Either[Int, String]](taint)
-                    deps.add(Left(from))
-                    deps.add(Left(write.getMemberRef))
-                    val factNum = domain.add(Pair.make(Left(to), deps))
+                    val deps = new util.HashSet[AbsVar](taint)
+                    deps.add(AbsVar.Local(from))
+                    deps.add(AbsVar.Local(write.getMemberRef))
+                    val factNum = domain.add(Pair.make(AbsVar.Local(to), deps))
                     result.add(factNum)
                   }
                 case _ =>
@@ -193,13 +204,13 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
             case read: JavaScriptPropertyRead =>
               val from = read.getObjectRef
               tainted match {
-                case Left(i) =>
+                case AbsVar.Local(i) =>
                   if (i == from || i == 0) {
                     val to = read.getDef
-                    val deps = new HashSet[Either[Int, String]](taint)
-                    deps.add(Left(from))
-                    deps.add(Left(read.getMemberRef))
-                    val factNum = domain.add(Pair.make(Left(to), deps))
+                    val deps = new util.HashSet[AbsVar](taint)
+                    deps.add(AbsVar.Local(from))
+                    deps.add(AbsVar.Local(read.getMemberRef))
+                    val factNum = domain.add(Pair.make(AbsVar.Local(to), deps))
                     result.add(factNum)
                   }
                 case _ =>
@@ -210,38 +221,38 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
               val from2 = instr.getUse(1)
               val to = instr.getDef
               tainted match {
-                case Left(i) =>
+                case AbsVar.Local(i) =>
                   if (i == 0) {
-                    val deps = new HashSet[Either[Int, String]]()
-                    deps.add(Left(from1))
-                    deps.add(Left(from2))
-                    result.add(domain.add(Pair.make(Left(to), deps)))
+                    val deps = new util.HashSet[AbsVar]()
+                    deps.add(AbsVar.Local(from1))
+                    deps.add(AbsVar.Local(from2))
+                    result.add(domain.add(Pair.make(AbsVar.Local(to), deps)))
                   }
                   if (i == from1 || i == from2) {
                     val to = instr.getDef
-                    result.add(domain.add(Pair.make(Left(to), taint)))
+                    result.add(domain.add(Pair.make(AbsVar.Local(to), taint)))
                   }
                   if (symTable.isConstant(from1)) {
-                    result.add(domain.add(Pair.make(Left(to), Collections.singleton(Left(from1)))))
+                    result.add(domain.add(Pair.make(AbsVar.Local(to), Collections.singleton(AbsVar.Local(from1)))))
                   }
                   if (symTable.isConstant(from2)) {
-                    result.add(domain.add(Pair.make(Left(to), Collections.singleton(Left(from2)))))
+                    result.add(domain.add(Pair.make(AbsVar.Local(to), Collections.singleton(AbsVar.Local(from2)))))
                   }
                 case _ =>
               }
             case _: SSAUnaryOpInstruction =>
               val from1 = instr.getUse(0)
               tainted match {
-                case Left(i) =>
+                case AbsVar.Local(i) =>
                   val to = instr.getDef
                   if (i == from1 || i == 0) {
-                    val deps = new HashSet[Either[Int, String]](taint)
-                    deps.add(Left(from1))
-                    val factNum = domain.add(Pair.make(Left(to), deps))
+                    val deps = new util.HashSet[AbsVar](taint)
+                    deps.add(AbsVar.Local(from1))
+                    val factNum = domain.add(Pair.make(AbsVar.Local(to), deps))
                     result.add(factNum)
                   }
                   if (symTable.isConstant(from1)) {
-                    result.add(domain.add(Pair.make(Left(to), Collections.singleton(Left(from1)))))
+                    result.add(domain.add(Pair.make(AbsVar.Local(to), Collections.singleton(AbsVar.Local(from1)))))
                   }
                 case _ =>
               }
@@ -264,9 +275,9 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
     /**
      * standard flow function from callee to caller; just identity
      */
-    override def getReturnFlowFunction(call: BasicBlockInContext[IExplodedBasicBlock],
-                                       src: BasicBlockInContext[IExplodedBasicBlock],
-                                       dest: BasicBlockInContext[IExplodedBasicBlock]): IFlowFunction = IdentityFlowFunction.identity
+    override def getReturnFlowFunction(call: Block,
+                                       src: Block,
+                                       dest: Block): IFlowFunction = IdentityFlowFunction.identity
   }
 
   /**
@@ -279,27 +290,25 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
    * the flow functions.
    *
    */
-  private class ReachingDefsProblem extends PartiallyBalancedTabulationProblem[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, String], Set[Either[Int, String]]]] {
+  class ReachingDefsProblem extends PartiallyBalancedTabulationProblem[Block, CGNode, Pair[AbsVar, util.Set[AbsVar]]] {
     private val flowFunctions = new DataFlowFunctions(domain)
     /**
      * path edges corresponding to all putstatic instructions, used as seeds for the analysis
      */
-    private val initialSeedsVal: Collection[PathEdge[BasicBlockInContext[IExplodedBasicBlock]]] = collectInitialSeeds
+    private val initialSeedsVal: Collection[PathEdge[Block]] = collectInitialSeeds
 
     /**
      * collect the putstatic instructions in the call graph as {@link PathEdge} seeds for the analysis
      */
-    private def collectInitialSeeds: Collection[PathEdge[BasicBlockInContext[IExplodedBasicBlock]]] = {
-      val result:Collection[PathEdge[BasicBlockInContext[IExplodedBasicBlock]]] = new HashSet[PathEdge[BasicBlockInContext[IExplodedBasicBlock]]]()
+    private def collectInitialSeeds: Collection[PathEdge[Block]] = {
+      val result:Collection[PathEdge[Block]] = new HashSet[PathEdge[Block]]()
       val itr = supergraph.getProcedureGraph.iterator
       while (itr.hasNext) {
         val cgNode = itr.next()
         val fakeEntry = getFakeEntry(cgNode)
-        val factNum = domain.add(Pair.make(Left(0), new HashSet[Either[Int, String]]))
-        icfg.getSuccNodes(fakeEntry).forEachRemaining((succ: BasicBlockInContext[IExplodedBasicBlock]) => {
-          def foo(succ: BasicBlockInContext[IExplodedBasicBlock]) = {
-            val entryInstr = fakeEntry.getDelegate.getInstruction
-            val succInstr = succ.getDelegate.getInstruction
+        val factNum = domain.add(Pair.make(AbsVar.Local(0), new HashSet[AbsVar]()))
+        icfg.getSuccNodes(fakeEntry).forEachRemaining((succ: Block) => {
+          def foo(succ: Block) = {
             result.add(PathEdge.createPathEdge(fakeEntry, factNum, succ, factNum))
           }
           foo(succ)
@@ -311,7 +320,7 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
     /**
      * we use the entry block of the CGNode as the fake entry when propagating from callee to caller with unbalanced parens
      */
-    override def getFakeEntry(node: BasicBlockInContext[IExplodedBasicBlock]): BasicBlockInContext[IExplodedBasicBlock] = {
+    override def getFakeEntry(node: Block): Block = {
       val cgNode = node.getNode
       getFakeEntry(cgNode)
     }
@@ -325,37 +334,23 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
       entriesForProcedure(0)
     }
 
-    override def getFunctionMap: IPartiallyBalancedFlowFunctions[BasicBlockInContext[IExplodedBasicBlock]] = flowFunctions
+    override def getFunctionMap: IPartiallyBalancedFlowFunctions[Block] = flowFunctions
 
-    override def getDomain: TabulationDomain[Pair[Either[Int, String], Set[Either[Int, String]]], BasicBlockInContext[IExplodedBasicBlock]] = domain
+    override def getDomain: TabulationDomain[Pair[AbsVar, util.Set[AbsVar]], Block] = domain
 
     /**
      * we don't need a merge function; the default unioning of tabulation works fine
      */
     override def getMergeFunction: IMergeFunction = null
 
-    override def getSupergraph: ISupergraph[BasicBlockInContext[IExplodedBasicBlock], CGNode] = supergraph
+    override def getSupergraph: ISupergraph[Block, CGNode] = supergraph
 
-    override def initialSeeds: Collection[PathEdge[BasicBlockInContext[IExplodedBasicBlock]]] = initialSeedsVal
+    override def initialSeeds: Collection[PathEdge[Block]] = initialSeedsVal
   }
 
-  /**
-   * perform the tabulation analysis and return the {@link TabulationResult}
-   */
-  def analyze: TabulationResult[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, String], Set[Either[Int, String]]]] = {
-  import com.ibm.wala.util.intset.IntSet
-    val solver = PartiallyBalancedTabulationSolver.createPartiallyBalancedTabulationSolver(new ReachingDefsProblem, null)
-    var result: TabulationResult[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[Either[Int, String], Set[Either[Int, String]]]] = null
-    try result = solver.solve
-    catch {
-      case e: CancelException =>
-        // this shouldn't happen
-        assert(false)
-    }
-    result
+  val problem = new ReachingDefsProblem
+
+  def solve: TabulationResult[BasicBlockInContext[IExplodedBasicBlock], CGNode, Pair[AbsVar, util.Set[AbsVar]]] = {
+    PartiallyBalancedTabulationSolver.createPartiallyBalancedTabulationSolver(problem, null).solve()
   }
-
-  def getSupergraph: ISupergraph[BasicBlockInContext[IExplodedBasicBlock], CGNode] = supergraph
-
-  def getDomain: TabulationDomain[Pair[Either[Int, String], Set[Either[Int, String]]], BasicBlockInContext[IExplodedBasicBlock]] = domain
 }

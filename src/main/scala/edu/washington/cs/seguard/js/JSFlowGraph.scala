@@ -171,7 +171,6 @@ object JSFlowGraph {
       case _:JavaScriptPropertyWrite => None // FIXME: how to retrieve property name?
       case _:JavaScriptPropertyRead => None // FIXME: how to retrieve property name?
       case _:AstGlobalWrite => None
-      case _:AstGlobalRead => None
       case _:JavaScriptCheckReference => None
       case _:SSAReturnInstruction => None
       case _:AstLexicalWrite => None
@@ -209,8 +208,8 @@ object JSFlowGraph {
     // IFDS based data-flow analysis
     val icfg = ExplodedInterproceduralCFG.make(cg)
     val dataflow = new IFDSDataFlow(icfg)
-    val results = dataflow.analyze
-    val superGraph = dataflow.getSupergraph
+    val results = dataflow.solve
+    val superGraph = dataflow.problem.getSupergraph
     val aliasMap: mutable.Map[String, mutable.Map[Int, Int]] = mutable.HashMap()
     val globalVarMap: mutable.Map[String, mutable.Map[Int, String]] = mutable.HashMap()
 
@@ -248,7 +247,7 @@ object JSFlowGraph {
         // Each node corresponds to a _single_ instruction
         val instruction = node.getDelegate.getInstruction
 
-        val iFlowDeps = mutable.HashMap[Either[Int, String], mutable.Set[Either[Int, String]]]()
+        val iFlowDeps = mutable.HashMap[AbsVar, mutable.Set[AbsVar]]()
 
         // Collect facts at current node from solution
         val solution = results.getResult(node)
@@ -257,7 +256,7 @@ object JSFlowGraph {
           val fact = iter.next()
           // fact remapped back to abstract domain: a pair of (dependent: Int, dependencies: Set[Int])
           // each value is an Int due to SSA construction
-          val absValues = dataflow.getDomain.getMappedObject(fact)
+          val absValues = dataflow.problem.getDomain.getMappedObject(fact)
           iFlowDeps.getOrElseUpdate(absValues.fst, mutable.Set()).addAll(absValues.snd.asScala)
         }
 
@@ -265,8 +264,8 @@ object JSFlowGraph {
           case (k, v) => {
             val fromValues = v.flatMap(v => {
               v match {
-                case Left(i) => getDef(node.getNode.getDU, symTable, i)
-                case Right(s) => Some(s, None)
+                case AbsVar.Local(i) => getDef(node.getNode.getDU, symTable, i)
+                case AbsVar.Global(s) => Some(s, None)
               }
             } : Option[(String, Option[String])]).toSet
             if (fromValues.nonEmpty) {
@@ -328,8 +327,8 @@ object JSFlowGraph {
                   val vId = dot.createNode(v.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
                   dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                 }
-                if (dataFlowDeps.contains(Left(use))) {
-                  for ((dep, optTag) <- dataFlowDeps(Left(use))) {
+                if (dataFlowDeps.contains(AbsVar.Local(use))) {
+                  for ((dep, optTag) <- dataFlowDeps(AbsVar.Local(use))) {
                     val vId = dot.createNode(dep.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString) ++ optTagAttrs(optTag))
                     dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                   }
