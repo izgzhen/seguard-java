@@ -104,14 +104,19 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
       val tainted: AbsVar = fact.fst
       val taint: AbsVar = fact.snd
       val result = MutableSparseIntSet.makeEmpty
+      // if for propagating existing flow
       if (tainted != zeroTainted) {
         if (rhsVars.contains(tainted)) {
           result.add(domain.add(Pair.make(lhsVar, taint)))
         }
-      } else {
+      } else { // if for new flow
         for (flow <- newFlows) {
           result.add(domain.add(Pair.make(lhsVar, flow)))
         }
+      }
+      // If not flowing to the killed LHS
+      if (tainted != lhsVar) {
+        result.add(inputDomain)
       }
       result
     }
