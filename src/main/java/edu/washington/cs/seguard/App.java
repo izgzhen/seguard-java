@@ -23,6 +23,7 @@ public class App
         options.addOption(Option.builder().argName("lang").hasArg().longOpt("lang").desc("lang: java, js").build());
         options.addOption(Option.builder().argName("apk").hasArg().longOpt("apk").desc("apk path").build());
         options.addOption(Option.builder().argName("js").hasArg().longOpt("js").desc("JS path").build());
+        options.addOption(Option.builder().argName("config").hasArg().longOpt("config").desc("config path").build());
         options.addOption(Option.builder().argName("newApk").hasArg().longOpt("newApk").desc("new apk path").build());
         options.addOption(Option.builder().argName("outputPath").hasArg().longOpt("outputPath").desc("output path").build());
         options.addOption(Option.builder().argName("apkclasses").hasArg().longOpt("apkclasses").desc("apk classes file path").build());
@@ -45,7 +46,7 @@ public class App
         String outputPath = cmd.getOptionValue("outputPath");
         String sourceSinkFile = cmd.getOptionValue("sourceSinkFile");
         String androidPlatforms = cmd.getOptionValue("android");
-        val config = Config.load("../config.yaml"); // FIXME: pass in through parameters
+        val config = Config.load(cmd.getOptionValue("config"));
         config.setDebug(cmd.hasOption("d"));
         config.setAbstractionDumpPath(apkPath + ".abstraction.txt");
         config.setCallGraphDumpPath(apkPath + ".callgraph.txt");

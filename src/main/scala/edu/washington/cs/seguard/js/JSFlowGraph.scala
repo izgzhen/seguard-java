@@ -189,7 +189,7 @@ object JSFlowGraph {
           None
         } else {
           // throw new RuntimeException(instruction.toString + ", " + instruction.getClass.toString)
-          println("Unhandled at abstractInstruction: " + instruction.toString(symTable) + ", " + instruction.getClass.toString)
+//          println("Unhandled at abstractInstruction: " + instruction.toString(symTable) + ", " + instruction.getClass.toString)
           None
         }
       }
