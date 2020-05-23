@@ -26,6 +26,7 @@ $(JAR): $(SRC_FILES)
 
 test: $(TEST_JAVA_CLASSES)
 	mvn -q test
+	timeout 10 ./seguardjs-cli tests/tmpoc4jukbq.js tests/tmpoc4jukbq.js.gexf
 
 clean:
 	rm -r target

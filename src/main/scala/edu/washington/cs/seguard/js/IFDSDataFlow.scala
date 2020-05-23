@@ -12,6 +12,9 @@ import com.ibm.wala.util.collections.Pair
 import com.ibm.wala.util.intset.{IntSet, MutableMapping, MutableSparseIntSet}
 import java.util.{Collection, HashSet}
 
+import scala.collection.mutable
+import scala.jdk.CollectionConverters._
+
 sealed abstract class AbsVar extends Product with Serializable
 
 object AbsVar {
@@ -96,18 +99,35 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
      */
     override def getCallToReturnFlowFunction(src: Block, dest: Block): IUnaryFlowFunction = KillEverything.singleton
 
+    private def flow(inputDomain: Int, lhsVar: AbsVar, rhsVars: Set[AbsVar], newFlows: Set[AbsVar]): IntSet = {
+      val fact = domain.getMappedObject(inputDomain)
+      val tainted: AbsVar = fact.fst
+      val taint: AbsVar = fact.snd
+      val result = MutableSparseIntSet.makeEmpty
+      if (tainted != zeroTainted) {
+        if (rhsVars.contains(tainted)) {
+          result.add(domain.add(Pair.make(lhsVar, taint)))
+        }
+      } else {
+        for (flow <- newFlows) {
+          result.add(domain.add(Pair.make(lhsVar, flow)))
+        }
+      }
+      result
+    }
+
     /**
      * flow function for normal intraprocedural edges
+     *
+     * FIXME: only test.js/<function-name> is analyzed. The implicit main function is not. What is wrong?
      */
     override def getNormalFlowFunction(src: Block, dest: Block): IUnaryFlowFunction = {
       val symTable = src.getNode.getIR.getSymbolTable
       new IUnaryFlowFunction {
         override def getTargets(inputDomain: Int): IntSet = {
-          val fact = domain.getMappedObject(inputDomain)
           val instr = src.getDelegate.getInstruction
+          // FIXME: The instr here of <Code body of function Leventstream.js> is not complete
           val result = MutableSparseIntSet.makeEmpty
-          val tainted: AbsVar = fact.fst
-          val taint: AbsVar = fact.snd
           if (instr == null || (instr.getNumberOfUses < 1 && !instr.isInstanceOf[AstGlobalRead])
             || instr.isInstanceOf[JavaScriptCheckReference] || instr.isInstanceOf[SetPrototype]
             || instr.isInstanceOf[SSAConditionalBranchInstruction]
@@ -116,145 +136,64 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
             // do nothing
           } else instr match {
             case lookup: PrototypeLookup =>
-              val lhs = lookup.getDef(0)
-              val rhs = lookup.getUse(0)
-              tainted match {
-                case AbsVar.Local(i) =>
-                  if (i == rhs || i == 0) {
-                    val factNum = domain.add(Pair.make(AbsVar.Local(lhs), taint))
-                    result.add(factNum)
-                  }
-                  if (i != lhs) {
-                    result.add(inputDomain)
-                  }
-                case _ =>
-              }
-              return result
+              return flow(inputDomain, AbsVar.Local(lookup.getDef(0)), Set(AbsVar.Local(lookup.getUse(0))), Set())
             case readInstr: AstGlobalRead =>
-              val from = readInstr.getGlobalName
-              val lhs = readInstr.getDef
-              tainted match {
-                case AbsVar.Global(s) =>
-                  result.add(domain.add(Pair.make(AbsVar.Local(lhs), AbsVar.Global(from))))
-                  if (s == from) {
-                    result.add(domain.add(Pair.make(AbsVar.Local(lhs), taint)))
-                  }
-                  result.add(inputDomain)
-                case AbsVar.Local(i) =>
-                  if (lhs != i) {
-                    result.add(inputDomain)
-                  }
-              }
-              return result
+              return flow(inputDomain, AbsVar.Local(readInstr.getDef), Set(), Set(AbsVar.Global(readInstr.getGlobalName)))
             case writeInstr: AstGlobalWrite =>
-              val from = writeInstr.getVal
-              tainted match {
-                case AbsVar.Local(i) =>
-                  if (i == from || i == 0) {
-                    val to = writeInstr.getGlobalName
-                    val factNum = domain.add(Pair.make(AbsVar.Global(to), taint))
-                    result.add(factNum)
-                  }
-                case _ =>
-              }
+              return flow(inputDomain, AbsVar.Global(writeInstr.getGlobalName), Set(AbsVar.Local(writeInstr.getVal)), Set())
             case getInstr: SSAGetInstruction =>
-              val lhs = getInstr.getDef
-              tainted match {
-                case AbsVar.Local(i) =>
-                  if (i == 0) {
-                    if (!getInstr.isStatic) {
-                      result.add(domain.add(Pair.make(AbsVar.Local(lhs), AbsVar.Global("\"" + getInstr.getDeclaredField.getName + "\""))))
-                    }
-                    result.add(domain.add(Pair.make(AbsVar.Local(lhs), taint)))
-                  }
-                  if (i != lhs) {
-                    result.add(inputDomain)
-                  }
-                case _ =>
+              val newConstants: Set[AbsVar] = if (!getInstr.isStatic) {
+                Set(AbsVar.Global("\"" + getInstr.getDeclaredField.getName + "\""))
+              } else {
+                Set()
               }
-              return result
+              return flow(inputDomain, AbsVar.Local(getInstr.getDef), Set(), newConstants)
             case putInstr: SSAPutInstruction =>
               if (putInstr.getNumberOfUses > 1) {
                 val from = putInstr.getUse(1)
-                tainted match {
-                  case AbsVar.Local(i) =>
-                    if (i == from || i == 0) {
-                      val to = putInstr.getUse(0)
-                      result.add(domain.add(Pair.make(AbsVar.Local(to), taint)))
-                      result.add(domain.add(Pair.make(AbsVar.Local(to), AbsVar.Global("\"" + putInstr.getDeclaredField.getName + "\""))))
-                    }
-                  case _ =>
+                val to = putInstr.getUse(0)
+                val newConstants: Set[AbsVar] = if (!putInstr.isStatic) {
+                  Set(AbsVar.Global("\"" + putInstr.getDeclaredField.getName + "\""))
+                } else {
+                  Set()
                 }
+                return flow(inputDomain, AbsVar.Local(to), Set(AbsVar.Local(from)), newConstants)
               }
             case javaScriptPropertyWrite: JavaScriptPropertyWrite =>
               // NOTE: this branch seems like a hot plate
               val from = javaScriptPropertyWrite.getUse(2)
               val to = javaScriptPropertyWrite.getObjectRef
-              tainted match {
-                case AbsVar.Local(i) =>
-                  if (i == from) {
-                    result.add(domain.add(Pair.make(AbsVar.Local(to), AbsVar.Local(javaScriptPropertyWrite.getMemberRef))))
-                  }
-                  if (i != to) {
-                    result.add(inputDomain)
-                  }
-                case _ =>
-              }
-              return result
-            case read: JavaScriptPropertyRead =>
-              val from = read.getObjectRef
-              val to = read.getDef
-              tainted match {
-                case AbsVar.Local(i) =>
-                  if (i == from) {
-                    result.add(domain.add(Pair.make(AbsVar.Local(to), AbsVar.Local(read.getMemberRef))))
-                  }
-                  if (i != to) {
-                    result.add(inputDomain)
-                  }
-                case _ =>
-              }
-              return result
+              val newConstants: Set[AbsVar] = Set(AbsVar.Local(javaScriptPropertyWrite.getMemberRef))
+              return flow(inputDomain, AbsVar.Local(to), Set(AbsVar.Local(from)), newConstants)
+            case javaScriptPropertyRead: JavaScriptPropertyRead =>
+              val from = javaScriptPropertyRead.getObjectRef
+              val to = javaScriptPropertyRead.getDef
+              val newConstants: Set[AbsVar] = Set(AbsVar.Local(javaScriptPropertyRead.getMemberRef))
+              return flow(inputDomain, AbsVar.Local(to), Set(AbsVar.Local(from)), newConstants)
             case _: SSABinaryOpInstruction =>
               val from1 = instr.getUse(0)
               val from2 = instr.getUse(1)
               val lhs = instr.getDef
-              tainted match {
-                case AbsVar.Local(i) =>
-                  if (i == from1 || i == from2) {
-                    result.add(domain.add(Pair.make(AbsVar.Local(lhs), taint)))
-                  }
-                  // i == 0 iff. zero input domain
-                  if (i == 0) {
-                    if (symTable.isConstant(from1)) {
-                      result.add(domain.add(Pair.make(AbsVar.Local(lhs), AbsVar.Local(from1))))
-                    }
-                    if (symTable.isConstant(from2)) {
-                      result.add(domain.add(Pair.make(AbsVar.Local(lhs), AbsVar.Local(from2))))
-                    }
-                  }
-                  if (i != lhs) {
-                    result.add(inputDomain)
-                  }
-                case _ =>
-                  println(instr.toString(symTable))
+              val rhs = mutable.Set[AbsVar]()
+              val newConstants = mutable.Set[AbsVar]()
+              if (symTable.isConstant(from1)) {
+                newConstants.add(AbsVar.Local(from1))
+              } else {
+                rhs.add(AbsVar.Local(from1))
               }
-              return result
+              if (symTable.isConstant(from2)) {
+                newConstants.add(AbsVar.Local(from2))
+              } else {
+                rhs.add(AbsVar.Local(from2))
+              }
+              return flow(inputDomain, AbsVar.Local(lhs), rhs.toSet, newConstants.toSet)
             case _: SSAUnaryOpInstruction =>
               val from1 = instr.getUse(0)
               val lhs = instr.getDef
-              tainted match {
-                case AbsVar.Local(i) =>
-                  if (i == from1) {
-                    val factNum = domain.add(Pair.make(AbsVar.Local(lhs), taint))
-                    result.add(factNum)
-                  } else if (i != lhs) {
-                    result.add(inputDomain)
-                  }
-                  if (i == 0 && symTable.isConstant(from1)) {
-                    result.add(domain.add(Pair.make(AbsVar.Local(lhs), AbsVar.Local(from1))))
-                  }
-                case _ =>
+              if (symTable.isConstant(from1)) {
+                return flow(inputDomain, AbsVar.Local(lhs), Set(), Set(AbsVar.Local(from1)))
+              } else {
+                return flow(inputDomain, AbsVar.Local(lhs), Set(AbsVar.Local(from1)), Set())
               }
             case _ =>
               val instrString = instr.toString
@@ -279,6 +218,9 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
                                        src: Block,
                                        dest: Block): IFlowFunction = IdentityFlowFunction.identity
   }
+
+  private val zeroTainted = AbsVar.Local(0)
+  private val zeroTaint = null
 
   /**
    * Definition of the reaching definitions tabulation problem. Note that we choose to make the problem a <em>partially</em>
@@ -306,7 +248,7 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
       while (itr.hasNext) {
         val cgNode = itr.next()
         val fakeEntry = getFakeEntry(cgNode)
-        val factNum = domain.add(Pair.make(AbsVar.Local(0), null))
+        val factNum = domain.add(Pair.make(zeroTainted, zeroTaint))
         icfg.getSuccNodes(fakeEntry).forEachRemaining((succ: Block) => {
           def foo(succ: Block) = {
             result.add(PathEdge.createPathEdge(fakeEntry, factNum, succ, factNum))
