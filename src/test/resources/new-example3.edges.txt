@@ -6,10 +6,12 @@ child_process-[DATAFLOW]->require
 add-[DATAFLOW]->execSync
 --targetusername-[DATAFLOW]->add
 require-[DATAFLOW]->require
-"prototype"-[DATAFLOW]->execSync
 add-[DATAFLOW]->add
 Lnew-example3.js-[CALL]->$SfdxUtils$execSfdx$
+--targetusername-[DATAFLOW]->execSync
 sfdx-[DATAFLOW]->add
 Lnew-example3.js-[CALL]->$SfdxUtils$
 sfdx-[DATAFLOW]->execSync
 execSync-[DATAFLOW]->toString
+"prototype"-[DATAFLOW]->add
+"prototype"-[DATAFLOW]->execSync

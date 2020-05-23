@@ -1,12 +1,15 @@
 g-[CALL]->f
-global __WALA__int3rnal__global-[DATAFLOW]->f
 f-[DATAFLOW]->add
+global Function-[DATAFLOW]->f
 h-[CALL]->f
+global f-[DATAFLOW]->f
 g-[DATAFLOW]->g
 Lexample.js-[CALL]->h
 g-[DATAFLOW]->add
 h-[CALL]->g
 f-[DATAFLOW]->f
 1.0-[DATAFLOW]->add
+global __WALA__int3rnal__global-[DATAFLOW]->f
+global h-[DATAFLOW]->h
 global __WALA__int3rnal__global-[DATAFLOW]->h
 h-[DATAFLOW]->h

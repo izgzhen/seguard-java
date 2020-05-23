@@ -1,33 +1,39 @@
 hex
-require
-global $$undefined
-a
 "env"
 module[paths]
 process[env]
 utf8
+global a
 toString
 add
 7.0
 decoded
-npm_package_description
 global __WALA__int3rnal__global
-e
 
+e
+"paths"
 "npm_package_description"
+global process
 module
+require
+global npm_package_description
 process
 global Buffer
 Buffer
 f
 0.0
+global $$undefined
+global e
+a
+global module
 crypto
 constructor
 exports
 global require
 createDecipher
-decode
 paths
+global decode
+decode
 final
 2e2f746573742f64617461
 $$undefined
@@ -36,6 +42,10 @@ module[constructor]
 process[env][npm_package_description]
 from
 _compile
+"constructor"
 aes256
 Leventstream.js
 update
+global decoded
+npm_package_description
+global f

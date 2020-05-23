@@ -2,6 +2,7 @@
 add-[DATAFLOW]->add
 add-[DATAFLOW]->log
 log-[DATAFLOW]->log
+1.0-[DATAFLOW]->log
 console-[DATAFLOW]->log
 2.0-[DATAFLOW]->add
 2.0-[DATAFLOW]->log
