@@ -13,7 +13,6 @@ import com.ibm.wala.util.intset.{IntSet, MutableMapping, MutableSparseIntSet}
 import java.util.{Collection, HashSet}
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
 
 sealed abstract class AbsVar extends Product with Serializable
 

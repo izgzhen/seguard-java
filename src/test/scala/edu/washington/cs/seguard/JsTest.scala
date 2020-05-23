@@ -16,7 +16,7 @@ import org.junit.Assert._
 
 /* Created at 2/19/20 by zhen */
 class JsTest {
-  private val record = false
+  private val record = true
 
   def compareSetOfStrings(expectedFile: String, actual: Set[String]): Unit = {
     if (record) {

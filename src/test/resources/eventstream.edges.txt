@@ -1,6 +1,6 @@
 global __WALA__int3rnal__global-[DATAFLOW]->decode
 toString-[DATAFLOW]->toString
-global module-[DATAFLOW]->constructor
+constructor-[DATAFLOW]->_compile
 hex-[DATAFLOW]->update
 createDecipher-[DATAFLOW]->createDecipher
 e-[DATAFLOW]->e
@@ -8,26 +8,21 @@ global __WALA__int3rnal__global-[DATAFLOW]->e
 utf8-[DATAFLOW]->final
 utf8-[DATAFLOW]->update
 global decode-[DATAFLOW]->decode
+constructor-[DATAFLOW]->constructor
 from-[DATAFLOW]->from
-global Buffer-[DATAFLOW]->createDecipher
 "constructor"-[DATAFLOW]->constructor
 -[DATAFLOW]->_compile
 global Buffer-[DATAFLOW]->from
-constructor-[DATAFLOW]->_compile
-final-[DATAFLOW]->_compile
 global require-[DATAFLOW]->require
 final-[DATAFLOW]->add
-"npm_package_description"-[DATAFLOW]->createDecipher
 2e2f746573742f64617461-[DATAFLOW]->decode
 Leventstream.js-[CALL]->decode
 createDecipher-[DATAFLOW]->update
 global module-[DATAFLOW]->module[constructor]
 1.0-[DATAFLOW]->exports
-global module-[DATAFLOW]->_compile
 aes256-[DATAFLOW]->createDecipher
-constructor-[DATAFLOW]->exports
-global process-[DATAFLOW]->process[env][npm_package_description]
 global __WALA__int3rnal__global-[DATAFLOW]->require
+constructor-[DATAFLOW]->exports
 global e-[DATAFLOW]->e
 global f-[DATAFLOW]->e
 global f-[DATAFLOW]->exports
@@ -39,9 +34,7 @@ crypto-[DATAFLOW]->require
 exports-[DATAFLOW]->exports
 global $$undefined-[DATAFLOW]->from
 decoded-[DATAFLOW]->add
-global module-[DATAFLOW]->exports
 decode-[DATAFLOW]->require
-global process-[DATAFLOW]->createDecipher
 global process-[DATAFLOW]->process[env]
 decoded-[DATAFLOW]->_compile
 require-[DATAFLOW]->createDecipher
@@ -49,8 +42,6 @@ Buffer-[DATAFLOW]->from
 0.0-[DATAFLOW]->update
 global decoded-[DATAFLOW]->_compile
 _compile-[DATAFLOW]->_compile
-"env"-[DATAFLOW]->createDecipher
-constructor-[DATAFLOW]->constructor
 "paths"-[DATAFLOW]->_compile
 global decoded-[DATAFLOW]->add
 7.0-[DATAFLOW]->e
@@ -67,6 +58,5 @@ global npm_package_description-[DATAFLOW]->createDecipher
 decode-[DATAFLOW]->decode
 "env"-[DATAFLOW]->process[env][npm_package_description]
 npm_package_description-[DATAFLOW]->createDecipher
-global Buffer-[DATAFLOW]->process[env][npm_package_description]
 a-[DATAFLOW]->e
 createDecipher-[DATAFLOW]->final

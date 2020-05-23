@@ -12,7 +12,6 @@ global __WALA__int3rnal__global
 
 e
 "paths"
-"npm_package_description"
 global process
 module
 require

@@ -1,6 +1,5 @@
 g-[CALL]->f
 f-[DATAFLOW]->add
-global Function-[DATAFLOW]->f
 h-[CALL]->f
 global f-[DATAFLOW]->f
 g-[DATAFLOW]->g

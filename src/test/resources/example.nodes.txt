@@ -1,7 +1,6 @@
 global __WALA__int3rnal__global
 global h
 f
-global Function
 g
 $$undefined
 1.0
