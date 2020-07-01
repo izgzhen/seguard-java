@@ -89,17 +89,26 @@ class JsTest {
     testExampleJS("src/test/resources/example2.js")
   }
 
+  private def testJSWithEntrypoints(jsPath: String): Unit = {
+    val jsPathFile = new File(jsPath)
+    val entrypointsJsPath = jsPath.replace(".js", "-entrypoints.js")
+    val newEntrypointsJsPath = jsPathFile.getParent + "/" +
+      ("new-" + jsPathFile.getName).replace(".js", "-entrypoints.js")
+    assert(newEntrypointsJsPath == "src/test/resources/new-example3-entrypoints.js")
+    JSFlowGraph.getAllMethods(jsPath, newEntrypointsJsPath)
+    assertEquals(
+      Util.readLines(entrypointsJsPath),
+      Util.readLines(newEntrypointsJsPath))
+    val newJsPath = jsPathFile.getParent + "/" + ("new-" + jsPathFile.getName)
+    mergeFiles(
+      new File(newJsPath),
+      new File(jsPath),
+      new File(newEntrypointsJsPath))
+    testExampleJS(newJsPath)
+  }
+
   @Test
   def testExampleJS3(): Unit = {
-    val jsPath = "src/test/resources/example3.js"
-    JSFlowGraph.getAllMethods(jsPath, "src/test/resources/new-example3-entrypoints.js")
-    assertEquals(
-      Util.readLines("src/test/resources/example3-entrypoints.js"),
-      Util.readLines("src/test/resources/new-example3-entrypoints.js"))
-    mergeFiles(
-      new File("src/test/resources/new-example3.js"),
-      new File("src/test/resources/example3.js"),
-      new File("src/test/resources/new-example3-entrypoints.js"))
-    testExampleJS("src/test/resources/new-example3.js")
+    testJSWithEntrypoints("src/test/resources/example3.js")
   }
 }
