@@ -33,12 +33,12 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
 
   /**
    * controls numbering of putstatic instructions for use in tabulation
-   * TODO: use sum type instead of Either
    */
   @SuppressWarnings(Array("serial")) class DataFlowDomain
     extends MutableMapping[AbsDomain]
       with TabulationDomain[AbsDomain, Block] {
-    override def hasPriorityOver(p1: PathEdge[Block], p2: PathEdge[Block]): Boolean = { // don't worry about worklist priorities
+    override def hasPriorityOver(p1: PathEdge[Block], p2: PathEdge[Block]): Boolean = {
+      // Don't worry about worklist priorities
       false
     }
   }
@@ -57,9 +57,11 @@ class IFDSDataFlow(val icfg: ExplodedInterproceduralCFG) {
     override def getCallFlowFunction(src: Block, dest: Block, ret: Block): IUnaryFlowFunction = IdentityFlowFunction.identity
 
     /**
-     * flow function from call node to return node when there are no targets for the call site; not a case we are expecting
+     * Flow function from call node to return node when there are no targets for the call site
+     * FIXME: not a case we are expecting
+     * if we're missing callees, just keep what information we have
      */
-    override def getCallNoneToReturnFlowFunction(src: Block, dest: Block): IUnaryFlowFunction = { // if we're missing callees, just keep what information we have
+    override def getCallNoneToReturnFlowFunction(src: Block, dest: Block): IUnaryFlowFunction = {
       // TODO: imprecision for both application API and platform API
 //      val instr = src.getDelegate.getInstruction
 //      instr match {

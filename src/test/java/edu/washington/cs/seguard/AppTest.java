@@ -68,7 +68,7 @@ public class AppTest
         method.retrieveActiveBody();
         Scene.v().setEntryPoints(Collections.singletonList(method));
         val config = Config.load("src/test/resources/config.yaml");
-        val conditions = new Conditions("SourcesAndSinks.txt", config);
+        val conditions = new Conditions("config/SourcesAndSinks.txt", config);
         IFDSDataFlowTransformer transformer = new IFDSDataFlowTransformer(conditions, config);
         System.out.println(method.getActiveBody());
         val rewriter = new AliasRewriter(conditions);

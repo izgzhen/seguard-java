@@ -14,10 +14,11 @@ import edu.washington.cs.seguard.util.StatManager;
 import lombok.val;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 
-public class App
-{
-    public static void main(String[] args) throws Exception
-    {
+public class App {
+    /**
+     * The entry points to all analyses
+     */
+    public static void main(String[] args) throws Exception {
         Options options = new Options();
         options.addOption(Option.builder().argName("mode").hasArg().longOpt("mode").desc("mode: deobfuscator, core, entrypoints").build());
         options.addOption(Option.builder().argName("lang").hasArg().longOpt("lang").desc("lang: java, js").build());
@@ -70,6 +71,7 @@ public class App
 //                    flowGraph.Main();
                 }
                 else if (lang.equals("js")) {
+                    // Perform main JavaScript analysis
                     val g = new GexfWriter<SeGuardNodeAttr$.Value, SeGuardEdgeAttr$.Value>();
                     val cg = JSFlowGraph.addCallGraph(g, jsPath);
                     JSFlowGraph.addDataFlowGraph(g, cg);
@@ -78,6 +80,8 @@ public class App
                 System.out.println("Written to " + outputPath);
                 break;
             case "entrypoints":
+                // Extract a list of entry-points for main analysis later
+                // This is to avoid missing non-whole program analysis
                 assert lang.equals("js");
                 JSFlowGraph.getAllMethods(jsPath, outputPath);
                 break;

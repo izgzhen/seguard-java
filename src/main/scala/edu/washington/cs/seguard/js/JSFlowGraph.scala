@@ -76,6 +76,12 @@ object JSFlowGraph {
     bw.close()
   }
 
+  /**
+   * Add the callgraph to semantic graph
+   * @param g Semantic graph writer
+   * @param jsPath Path to the analyzed JS file
+   * @return The constructed call-graph (for later use in other analysis)
+   */
   def addCallGraph(g: GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr], jsPath: String) : CallGraph = {
     val path = Paths.get(jsPath)
     JSCallGraphUtil.setTranslatorFactory(new CAstRhinoTranslatorFactory)
@@ -204,8 +210,12 @@ object JSFlowGraph {
 
   private val logger = LoggerFactory.getLogger(JSFlowGraph.getClass)
 
-  def addDataFlowGraph(dot: GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr], cg: CallGraph) {
-    // IFDS based data-flow analysis
+  /**
+   * IFDS based data-flow analysis
+   * @param g Semantic graph writer
+   * @param cg Call graph
+   */
+  def addDataFlowGraph(g: GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr], cg: CallGraph) {
     val icfg = ExplodedInterproceduralCFG.make(cg)
     val dataflow = new IFDSDataFlow(icfg)
     val results = dataflow.solve
@@ -310,7 +320,7 @@ object JSFlowGraph {
                   }
                 case _ =>
               }
-              val uId = dot.createNode(u_complete, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString) ++ optTagAttrs(optTag))
+              val uId = g.createNode(u_complete, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString) ++ optTagAttrs(optTag))
               var iu = 0
               while (iu < instruction.getNumberOfUses) {
                 val use = instruction.getUse(iu)
@@ -319,8 +329,8 @@ object JSFlowGraph {
                   val defineNode = abstractInstruction(node.getNode.getDU, symTable, defined)
                   if (defineNode.isDefined) {
                     val (nodeName, optTag) = defineNode.get
-                    val vId = dot.createNode(nodeName, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString) ++ optTagAttrs(optTag))
-                    dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
+                    val vId = g.createNode(nodeName, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString) ++ optTagAttrs(optTag))
+                    g.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                   }
                 }
                 if (symTable.isConstant(use) && symTable.getConstantValue(use) != null) {
@@ -328,13 +338,13 @@ object JSFlowGraph {
                   if (v.startsWith("L")) {
                     v = getMethodName(v).get
                   }
-                  val vId = dot.createNode(v.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
-                  dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
+                  val vId = g.createNode(v.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString))
+                  g.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                 }
                 if (dataFlowDeps.contains(AbsVar.Local(use))) {
                   for ((dep, optTag) <- dataFlowDeps(AbsVar.Local(use))) {
-                    val vId = dot.createNode(dep.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString) ++ optTagAttrs(optTag))
-                    dot.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
+                    val vId = g.createNode(dep.trim(), Map(SeGuardNodeAttr.TYPE -> NodeType.CONSTANT.toString) ++ optTagAttrs(optTag))
+                    g.addEdge(vId, uId, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                   }
                 }
                 iu += 1
