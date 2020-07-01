@@ -28,8 +28,8 @@ test: $(TEST_JAVA_CLASSES)
 	mvn -q test
 	timeout 300 ./seguardjs-cli tests/tmpoc4jukbq.js tests/tmpoc4jukbq.js.gexf src/test/resources/config.yaml
 
-deploy-test:
-	BATCH_RUN=1 ./seguardjs-cli src/test/resources/example.js src/test/resources/example.js.gexf src/test/resources/config.yaml
+test-js:
+	./seguardjs-cli src/test/resources/example.js src/test/resources/example.js.gexf src/test/resources/config.yaml
 
 clean:
 	rm -r target

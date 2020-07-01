@@ -13,6 +13,6 @@ if [ -z "$BATCH_RUN" ]; then
 fi
 tmpfile=$(mktemp /tmp/abc-script.XXXXXX)
 tmpfile2=$(mktemp /tmp/abc-script.XXXXXX)
-java -jar $JAR --lang js --js $jspath --mode entrypoints --sourceSinkFile SourcesAndSinksJS.txt --outputPath $tmpfile --config $configpath
+java -jar $JAR --lang js --js $jspath --mode entrypoints --sourceSinkFile $SCRIPTDIR/config/SourcesAndSinksJS.txt --outputPath $tmpfile --config $configpath
 cat $jspath $tmpfile > $tmpfile2
-java -jar $JAR --lang js --js $tmpfile2 --mode core --sourceSinkFile SourcesAndSinksJS.txt --outputPath $outputpath --config $configpath
+java -jar $JAR --lang js --js $tmpfile2 --mode core --sourceSinkFile $SCRIPTDIR/config/SourcesAndSinksJS.txt --outputPath $outputpath --config $configpath
