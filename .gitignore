@@ -24,3 +24,4 @@ sootOutput
 .project
 .classpath
 classes.txt
+hs_err*log

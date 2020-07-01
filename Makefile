@@ -1,6 +1,6 @@
 JAR := target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
 
-all: $(JAR)
+jar: $(JAR)
 
 .phony: init test test-resource check
 
@@ -21,14 +21,14 @@ init: check $(TEST_JAVA_CLASSES)
 
 SRC_FILES := $(shell find src/ -type f -name '*.scala') $(shell find src/ -type f -name '*.java') pom.xml
 
+# -B for batch mode
 $(JAR): $(SRC_FILES)
-	mvn -q clean compile assembly:single -o
+	mvn -B compile assembly:single -o
 
-test: $(TEST_JAVA_CLASSES)
-	mvn -q test
+test: jar $(TEST_JAVA_CLASSES)
 	timeout 300 ./seguardjs-cli tests/tmpoc4jukbq.js tests/tmpoc4jukbq.js.gexf src/test/resources/config.yaml
 
-test-js:
+test-js: jar
 	./seguardjs-cli src/test/resources/example.js src/test/resources/example.js.gexf src/test/resources/config.yaml
 
 clean:

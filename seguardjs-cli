@@ -9,7 +9,7 @@ configpath=$(realpath $3)
 JAR=target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
 cd $SCRIPTDIR
 if [ -z "$BATCH_RUN" ]; then
-    make
+    make jar
 fi
 tmpfile=$(mktemp /tmp/abc-script.XXXXXX)
 tmpfile2=$(mktemp /tmp/abc-script.XXXXXX)

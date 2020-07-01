@@ -93,8 +93,13 @@ class JsTest {
   def testExampleJS3(): Unit = {
     val jsPath = "src/test/resources/example3.js"
     JSFlowGraph.getAllMethods(jsPath, "src/test/resources/new-example3-entrypoints.js")
-    assertEquals(Util.readLines("src/test/resources/example3-entrypoints.js"), Util.readLines("src/test/resources/new-example3-entrypoints.js"))
-    mergeFiles(new File("src/test/resources/new-example3.js"), new File("src/test/resources/example3.js"), new File("src/test/resources/new-example3-entrypoints.js"))
+    assertEquals(
+      Util.readLines("src/test/resources/example3-entrypoints.js"),
+      Util.readLines("src/test/resources/new-example3-entrypoints.js"))
+    mergeFiles(
+      new File("src/test/resources/new-example3.js"),
+      new File("src/test/resources/example3.js"),
+      new File("src/test/resources/new-example3-entrypoints.js"))
     testExampleJS("src/test/resources/new-example3.js")
   }
 }
