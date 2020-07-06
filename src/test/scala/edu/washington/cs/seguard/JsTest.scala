@@ -10,6 +10,8 @@ import edu.washington.cs.seguard.SeGuardNodeAttr.SeGuardNodeAttr
 import edu.washington.cs.seguard.js.JSFlowGraph
 import org.junit.Test
 
+import better.files._
+
 import scala.jdk.CollectionConverters._
 import org.junit.Assert._
 
@@ -18,13 +20,13 @@ import org.junit.Assert._
 class JsTest {
   private val record = false
 
-  def compareSetOfStrings(expectedFile: String, actual: Set[String]): Unit = {
+  def compareSetOfStrings(expectedFile: String, actual: List[String]): Unit = {
     if (record) {
       Util.writeLines(expectedFile, actual.asJava)
       return
     }
-    val expected: Set[String] = Util.readLines(expectedFile).asScala.toSet
-    val msg = String.format("\nActual: %s\n\nDiff: %s", actual.mkString("\n"), expected.diff(actual).mkString("\n"))
+    val expected: List[String] = Util.readLines(expectedFile).asScala.toList
+    val msg = String.format("\nActual: %s\n\nDiff: %s", actual.mkString("\n"), expected.toSet.diff(actual.toSet).mkString("\n"))
     assertEquals(msg, expected, actual)
   }
 
@@ -58,12 +60,12 @@ class JsTest {
     val cg = JSFlowGraph.addCallGraph(g, jsPath)
     JSFlowGraph.addDataFlowGraph(g, cg)
     val labels = g.getNodes.map(i => g.getNodeLabel(i))
-    compareSetOfStrings(jsPath.replace(".js", ".nodes.txt"), labels)
+    compareSetOfStrings(jsPath.replace(".js", ".nodes.txt"), labels.toList)
     compareSetOfStrings(jsPath.replace(".js", ".edges.txt"), g.getEdges.map { case (u, v) =>
       val lu = g.getNodeLabel(u)
       val lv = g.getNodeLabel(v)
       lu + "-[" + g.getEdgeAttrs(u, v)(SeGuardEdgeAttr.TYPE) + "]->" + lv
-    })
+    }.toList)
     g.write(jsPath.replace(".js", ".gexf"))
     labels
   }
@@ -91,24 +93,29 @@ class JsTest {
 
   private def testJSWithEntrypoints(jsPath: String): Unit = {
     val jsPathFile = new File(jsPath)
-    val entrypointsJsPath = jsPath.replace(".js", "-entrypoints.js")
-    val newEntrypointsJsPath = jsPathFile.getParent + "/" +
-      ("new-" + jsPathFile.getName).replace(".js", "-entrypoints.js")
-    assert(newEntrypointsJsPath == "src/test/resources/new-example3-entrypoints.js")
-    JSFlowGraph.getAllMethods(jsPath, newEntrypointsJsPath)
-    assertEquals(
-      Util.readLines(entrypointsJsPath),
-      Util.readLines(newEntrypointsJsPath))
+    val entrypointsJsPath = jsPath.replace(".js", ".entrypoints.js")
+    val entrypoints = JSFlowGraph.getAllMethods(jsPath)
+    compareSetOfStrings(entrypointsJsPath, entrypoints)
     val newJsPath = jsPathFile.getParent + "/" + ("new-" + jsPathFile.getName)
     mergeFiles(
       new File(newJsPath),
       new File(jsPath),
-      new File(newEntrypointsJsPath))
+      new File(entrypointsJsPath))
     testExampleJS(newJsPath)
   }
 
   @Test
   def testExampleJS3(): Unit = {
     testJSWithEntrypoints("src/test/resources/example3.js")
+  }
+
+  @Test
+  def testConventionalExamples(): Unit = {
+    val dir = "src"/"test"/"resources"/"conventional-changelog"/"js"
+    for (jsFile <- dir.glob("*.js")) {
+      if (!jsFile.toString.endsWith(".entrypoints.js")) {
+        testJSWithEntrypoints(jsFile.toString)
+      }
+    }
   }
 }

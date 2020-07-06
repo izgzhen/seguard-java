@@ -25,7 +25,10 @@ SRC_FILES := $(shell find src/ -type f -name '*.scala') $(shell find src/ -type 
 $(JAR): $(SRC_FILES)
 	mvn -B compile assembly:single -o
 
-test: jar $(TEST_JAVA_CLASSES)
+regtest-not-record:
+	grep 'private val record = false' src/test/scala/edu/washington/cs/seguard/JsTest.scala
+
+test: regtest-not-record jar $(TEST_JAVA_CLASSES)
 	timeout 300 ./seguardjs-cli tests/tmpoc4jukbq.js tests/tmpoc4jukbq.js.gexf src/test/resources/config.yaml
 
 test-js: jar

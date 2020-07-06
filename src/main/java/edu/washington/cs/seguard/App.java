@@ -83,7 +83,7 @@ public class App {
                 // Extract a list of entry-points for main analysis later
                 // This is to avoid missing non-whole program analysis
                 assert lang.equals("js");
-                JSFlowGraph.getAllMethods(jsPath, outputPath);
+                JSFlowGraph.writeEntrypoints(jsPath, outputPath);
                 break;
             default:
                 throw new RuntimeException("Unsupported mode: " + mode);

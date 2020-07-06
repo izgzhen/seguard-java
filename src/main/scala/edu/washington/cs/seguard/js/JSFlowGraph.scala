@@ -59,19 +59,27 @@ object JSFlowGraph {
     ret
   }
 
-  def getAllMethods(jsPath: String, outputPath: String): Unit = {
+  def getAllMethods(jsPath: String): List[String] = {
     val path = Paths.get(jsPath)
     JSCallGraphUtil.setTranslatorFactory(new CAstRhinoTranslatorFactory)
     val cg = JSCallGraphBuilderUtil.makeScriptCG(path.getParent.toString, path.getFileName.toString)
     val cha = cg.getClassHierarchy
     val methods = cha.asScala.filter(!_.getName.toString.contains("prologue.js")).flatMap(_.getAllMethods.asScala).toList
     val lines = methods.map(_.getDeclaringClass.getName.toString.split("/")).filter(_.length > 1).map(xs => toFunctionCall(xs(1)))
-    val file = new File(outputPath)
-    val bw = new BufferedWriter(new FileWriter(file))
+    var ret = List[String]()
     for (line <- lines) {
       if (!line.contains("@")) {
-        bw.write(line)
+        ret :+= line
       }
+    }
+    ret
+  }
+
+  def writeEntrypoints(jsPath: String, outputPath: String): Unit = {
+    val file = new File(outputPath)
+    val bw = new BufferedWriter(new FileWriter(file))
+    for (line <- getAllMethods(jsPath)) {
+      bw.write(line)
     }
     bw.close()
   }
