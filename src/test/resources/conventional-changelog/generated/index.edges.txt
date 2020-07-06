@@ -1,5 +1,4 @@
 " does not exist-[DATAFLOW]->add
-RegExp-[DATAFLOW]->RegExp
 ./presets/-[DATAFLOW]->add
 spread-[DATAFLOW]->spread
 global Array-[DATAFLOW]->Array
@@ -15,6 +14,8 @@ objectMode-[DATAFLOW]->Readable
 "preset"-[DATAFLOW]->add
 Readable-[DATAFLOW]->Readable
 url-[DATAFLOW]->require
+Lindex.js-[CALL]->conventionalChangelog
+RegExp-[DATAFLOW]->RegExp
 add-[DATAFLOW]->add
 through2-[DATAFLOW]->require
 transform-[DATAFLOW]->merge
@@ -47,10 +48,8 @@ utf8-[DATAFLOW]->nfcall
 global require-[DATAFLOW]->warn
 stream-[DATAFLOW]->require
 preset-[DATAFLOW]->preset
-Lnew-index.js-[CALL]->conventionalChangelog
 Object-[DATAFLOW]->merge
 global Object-[DATAFLOW]->Object
-"Readable"-[DATAFLOW]->Readable
 conventionalChangelog-[CALL]->LObject
 "path"-[DATAFLOW]->nfcall
 global conventionalChangelog-[DATAFLOW]->nfcall

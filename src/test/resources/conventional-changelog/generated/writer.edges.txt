@@ -1,22 +1,20 @@
+1.0-[DATAFLOW]->add
 Date-[DATAFLOW]->getFullYear
 "prototype"-[DATAFLOW]->repository
 "repository"-[DATAFLOW]->bind
 global __WALA__int3rnal__global-[DATAFLOW]->end
 "fix"-[DATAFLOW]->section
-Lnew-writer.js-[CALL]->getIssueLink
 global __WALA__int3rnal__global-[DATAFLOW]->getIssueLink
 feat-[DATAFLOW]->section
 lodash.assign-[DATAFLOW]->require
-Lnew-writer.js-[CALL]->writeLog
-1.0-[DATAFLOW]->add
 currentDate-[CALL]->Date_prototype_getMonth
 global getPatchVersionLink-[DATAFLOW]->getPatchVersionLink
 "prototype"-[DATAFLOW]->getFullYear
 global __WALA__int3rnal__global-[DATAFLOW]->getVersionLink
 Writer-[DATAFLOW]->end
+Lwriter.js-[CALL]->writeLog
 event-stream-[DATAFLOW]->require
 "version"-[DATAFLOW]->header
-Lnew-writer.js-[CALL]->LObject
 global writeLog-[DATAFLOW]->section
 breaks-[DATAFLOW]->section
 Date-[DATAFLOW]->Date
@@ -57,7 +55,9 @@ section-[DATAFLOW]->section
 8.0-[DATAFLOW]->substring
 writeLog-[CALL]->LObject
 Date-[CALL]->Date
+Lwriter.js-[CALL]->LObject
 global getVersionLink-[DATAFLOW]->format
+Lwriter.js-[CALL]->getVersionLink
 global __WALA__int3rnal__global-[DATAFLOW]->require
 global getIssueLink-[DATAFLOW]->format
 Date-[DATAFLOW]->getDate
@@ -67,17 +67,14 @@ Breaking Changes-[DATAFLOW]->section
 Bug Fixes-[DATAFLOW]->section
 global $$undefined-[DATAFLOW]->minus
 Writer-[DATAFLOW]->section
-Lnew-writer.js-[CALL]->getVersionLink
 global getCommitLink-[DATAFLOW]->header
 global __WALA__int3rnal__global-[DATAFLOW]->getCommitLink
 global Date-[DATAFLOW]->Date
 substring-[DATAFLOW]->format
 global $$undefined-[DATAFLOW]->getDate
-Lnew-writer.js-[CALL]->getCommitLink
 getIssueLink-[DATAFLOW]->bind
 getCommitLink-[DATAFLOW]->getCommitLink
 currentDate-[CALL]->Date_prototype_getFullYear
-Lnew-writer.js-[CALL]->Writer
 global Writer-[DATAFLOW]->fix
 getDate-[DATAFLOW]->getDate
 "feat"-[DATAFLOW]->section
@@ -91,19 +88,21 @@ global __WALA__int3rnal__global-[DATAFLOW]->add
 global __WALA__int3rnal__global-[DATAFLOW]->through
 getDate-[DATAFLOW]->format
 global Function-[DATAFLOW]->format
+Lwriter.js-[CALL]->currentDate
 format-[DATAFLOW]->format
 global Writer-[DATAFLOW]->feat
 getPatchVersionLink-[DATAFLOW]->bind
 %d-%s-%s-[DATAFLOW]->format
-currentDate-[DATAFLOW]->currentDate
-Lnew-writer.js-[CALL]->currentDate
 global __WALA__int3rnal__global-[DATAFLOW]->bind
+Lwriter.js-[CALL]->getCommitLink
+currentDate-[DATAFLOW]->currentDate
 getVersionLink-[DATAFLOW]->getVersionLink
 Date-[DATAFLOW]->getMonth
 global $$undefined-[DATAFLOW]->forEach
-Object-[DATAFLOW]->Object
 global Function-[DATAFLOW]->version
 global Writer-[DATAFLOW]->Writer
+Object-[DATAFLOW]->Object
+Lwriter.js-[CALL]->getIssueLink
 global getCommitLink-[DATAFLOW]->getCommitLink
 2.0-[DATAFLOW]->substr
 global Function-[DATAFLOW]->Writer
@@ -133,9 +132,10 @@ global Object-[DATAFLOW]->format
 forEach-[DATAFLOW]->forEach
 global __WALA__int3rnal__global-[DATAFLOW]->currentDate
 getPatchVersionLink-[DATAFLOW]->getPatchVersionLink
-Lnew-writer.js-[CALL]->getPatchVersionLink
-header-[DATAFLOW]->header
 end-[DATAFLOW]->end
+Lwriter.js-[CALL]->getPatchVersionLink
 global getPatchVersionLink-[DATAFLOW]->format
+Lwriter.js-[CALL]->Writer
+header-[DATAFLOW]->header
 currentDate-[CALL]->Date
 getCommitLink-[DATAFLOW]->bind

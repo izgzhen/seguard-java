@@ -1,11 +1,9 @@
 require
 path
 global RegExp
-all
 obj
 Array
 semver
-Lnew-jquery.js
 $$undefined
 global Array
 2
@@ -19,6 +17,8 @@ LObject
 module
 spread
 ^(\w*)\: (.*)$
+Ljquery.js
+all
 LArray
 global require
 denodeify

@@ -37,7 +37,7 @@ global writeLog
 "fix"
 forEach
 getDate
-Lnew-writer.js
+Lwriter.js
 version
 global getVersionLink
 through

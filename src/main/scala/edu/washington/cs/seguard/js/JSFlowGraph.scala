@@ -54,7 +54,7 @@ object JSFlowGraph {
   // This can't process name like $$jscomp$generator$Engine_$$throw_$ meaningfully
   private def toFunctionCall(name: String): String = {
     val (dollars, rest) = splitAtLast(name.stripPrefix("$").stripSuffix("$"), '$')
-    val ret = dollars + rest.replace("$$", ".prototype.").replace("$", ".") + "();\n"
+    val ret = dollars + rest.replace("$$", ".prototype.").replace("$", ".") + "();"
     assert(!ret.contains(".."));
     ret
   }
@@ -79,7 +79,7 @@ object JSFlowGraph {
     val file = new File(outputPath)
     val bw = new BufferedWriter(new FileWriter(file))
     for (line <- getAllMethods(jsPath)) {
-      bw.write(line)
+      bw.write(line + "\n")
     }
     bw.close()
   }

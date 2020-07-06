@@ -42,6 +42,7 @@ to
 match
 ig
 "format"
+Lgit.js
 "
 getFirstCommit
 child
@@ -50,7 +51,6 @@ global getFirstCommit
 4.0
 BREAKING CHANGE:\s([\s\S]*)
 global parseRawCommit
-Lnew-git.js
 "length"
 writeArray
 1

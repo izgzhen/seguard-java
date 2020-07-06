@@ -1,4 +1,2 @@
 SfdxUtils.execSfdx();
-
 SfdxUtils();
-

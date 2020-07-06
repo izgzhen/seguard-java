@@ -16,7 +16,6 @@ import scala.jdk.CollectionConverters._
 import org.junit.Assert._
 
 
-/* Created at 2/19/20 by zhen */
 class JsTest {
   private val record = false
 
@@ -26,7 +25,7 @@ class JsTest {
       return
     }
     val expected: List[String] = Util.readLines(expectedFile).asScala.toList
-    val msg = String.format("\nActual: %s\n\nDiff: %s", actual.mkString("\n"), expected.toSet.diff(actual.toSet).mkString("\n"))
+    val msg = String.format("\nActual: %s\n\nDiff: %s\n\n", actual.mkString("\n"), expected.toSet.diff(actual.toSet).mkString("\n"))
     assertEquals(msg, expected, actual)
   }
 
@@ -71,7 +70,7 @@ class JsTest {
   }
 
   @Test def testExampleJS1(): Unit = {
-    testExampleJS("src/test/resources/example.js")
+    testExampleJS("src/test/resources/js/example.js")
   }
 
   /**
@@ -88,15 +87,18 @@ class JsTest {
 
   @Test
   def testExampleJS2(): Unit = {
-    testExampleJS("src/test/resources/example2.js")
+    testExampleJS("src/test/resources/js/example2.js")
   }
 
   private def testJSWithEntrypoints(jsPath: String): Unit = {
     val jsPathFile = new File(jsPath)
-    val entrypointsJsPath = jsPath.replace(".js", ".entrypoints.js")
+    val jsDir = jsPathFile.getParentFile
+    val jsName = jsPathFile.getName
+    val jsGeneratedDir = jsDir.getParent + "/generated"
+    val entrypointsJsPath = jsGeneratedDir + "/" + jsName.replace(".js", ".entrypoints.js")
     val entrypoints = JSFlowGraph.getAllMethods(jsPath)
     compareSetOfStrings(entrypointsJsPath, entrypoints)
-    val newJsPath = jsPathFile.getParent + "/" + ("new-" + jsPathFile.getName)
+    val newJsPath = jsGeneratedDir + "/" + jsName
     mergeFiles(
       new File(newJsPath),
       new File(jsPath),
@@ -106,16 +108,14 @@ class JsTest {
 
   @Test
   def testExampleJS3(): Unit = {
-    testJSWithEntrypoints("src/test/resources/example3.js")
+    testJSWithEntrypoints("src/test/resources/js/example3.js")
   }
 
   @Test
   def testConventionalExamples(): Unit = {
     val dir = "src"/"test"/"resources"/"conventional-changelog"/"js"
     for (jsFile <- dir.glob("*.js")) {
-      if (!jsFile.toString.endsWith(".entrypoints.js")) {
-        testJSWithEntrypoints(jsFile.toString)
-      }
+      testJSWithEntrypoints(jsFile.toString)
     }
   }
 }

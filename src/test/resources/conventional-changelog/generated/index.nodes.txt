@@ -6,7 +6,6 @@ github|bitbucket|gitlab
 2
 prototype
 catch
-fs
 objectMode
 global __WALA__int3rnal__global
 preset
@@ -26,7 +25,6 @@ allSettled
 ./presets/
 LArray
 global require
-"Readable"
 Array
 git-raw-commits
 i
@@ -42,7 +40,6 @@ Object
 gi
 Preset: "
 "includeDetails"
-Lnew-index.js
 $$undefined
 stream
 global conventionalChangelog
@@ -55,5 +52,7 @@ RegExp
 nfcall
 add
 transform
+fs
+Lindex.js
 lodash
 "pkg"
