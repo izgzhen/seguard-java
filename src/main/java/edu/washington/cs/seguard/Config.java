@@ -25,9 +25,18 @@ public class Config {
         return sensitiveConstStringKeywords;
     }
 
-    @Getter @Setter boolean debug;
+    @Setter boolean debug;
+
+    public boolean isDebug() {
+        return debug;
+    }
+
     @Getter @Setter String abstractionDumpPath;
-    @Getter @Setter String callGraphDumpPath;
+    @Setter String callGraphDumpPath;
+
+    public String getCallGraphDumpPath() {
+        return callGraphDumpPath;
+    }
 
     public static Config load(String path) {
         Representer rep = new Representer();

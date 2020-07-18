@@ -7,7 +7,7 @@ import java.nio.file.Files
 import com.semantic_graph.writer.GexfWriter
 import edu.washington.cs.seguard.SeGuardEdgeAttr.SeGuardEdgeAttr
 import edu.washington.cs.seguard.SeGuardNodeAttr.SeGuardNodeAttr
-import edu.washington.cs.seguard.js.JSFlowGraph
+import edu.washington.cs.seguard.js_core.JSFlowGraph
 import org.junit.Test
 
 import better.files._

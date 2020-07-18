@@ -1,4 +1,4 @@
-package edu.washington.cs.seguard.js
+package edu.washington.cs.seguard.js_core
 
 import com.ibm.wala.cast.ir.ssa.{AstGlobalRead, AstGlobalWrite, AstLexicalWrite, EachElementGetInstruction}
 import com.ibm.wala.cast.js.ssa._

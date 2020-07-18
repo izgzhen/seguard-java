@@ -1,4 +1,4 @@
-package edu.washington.cs.seguard.js
+package edu.washington.cs.seguard.js_core
 
 import java.io.{BufferedWriter, File, FileWriter}
 import java.nio.file.Paths
