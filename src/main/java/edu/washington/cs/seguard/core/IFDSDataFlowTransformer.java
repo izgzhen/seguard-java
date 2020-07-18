@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class IFDSDataFlowTransformer extends SceneTransformer {
-    IFDSSolver<Unit, Pair<Value, Set<Abstraction>>, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver;
+    public IFDSSolver<Unit, Pair<Value, Set<Abstraction>>, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver;
 
     private Conditions conditions;
     private Config config;

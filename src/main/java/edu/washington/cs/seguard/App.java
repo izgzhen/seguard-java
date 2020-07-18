@@ -1,6 +1,7 @@
 package edu.washington.cs.seguard;
 
 import com.semantic_graph.writer.GexfWriter;
+import edu.washington.cs.seguard.java_core.FlowGraph;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -8,7 +9,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.log4j.PropertyConfigurator;
 
-import edu.washington.cs.seguard.js.JSFlowGraph;
+import edu.washington.cs.seguard.js_core.JSFlowGraph;
 import edu.washington.cs.seguard.pe.JimpleRewriter;
 import edu.washington.cs.seguard.util.StatManager;
 import lombok.val;
@@ -62,13 +63,13 @@ public class App {
             case "core":
                 Conditions conditions = new Conditions(sourceSinkFile, config);
                 if (lang == null || lang.equals("java")) {
-//                    val dot = new BetterDot(new GraphBackend.DOT(), conditions);
+                    val graphWriter = new GexfWriter<SeGuardNodeAttr$.Value, SeGuardEdgeAttr$.Value>();
                     System.out.println("Generating CallGraph (Spark)...");
-//                    val flowGraph = new FlowGraph(conditions, statManager, dot, config);
+                    val flowGraph = new FlowGraph(conditions, statManager, graphWriter, config);
                     SootOptionManager.Manager().buildOptionFlowGraph(
                             androidPlatforms, apkPath + ".out",
                             apkPath, "spark", new ProcessManifest(apkPath));
-//                    flowGraph.Main();
+                    flowGraph.Main();
                 }
                 else if (lang.equals("js")) {
                     // Perform main JavaScript analysis
