@@ -70,6 +70,7 @@ public class App {
                             androidPlatforms, apkPath + ".out",
                             apkPath, "spark", new ProcessManifest(apkPath));
                     flowGraph.Main();
+                    graphWriter.write(outputPath);
                 }
                 else if (lang.equals("js")) {
                     // Perform main JavaScript analysis

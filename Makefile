@@ -28,11 +28,16 @@ $(JAR): $(SRC_FILES)
 regtest-not-record:
 	grep 'private val record = false' src/test/scala/edu/washington/cs/seguard/JsTest.scala
 
-test: regtest-not-record jar $(TEST_JAVA_CLASSES)
+test: test-js-core test-java-core
+	mvn test
+
+test-js-core: regtest-not-record jar
 	timeout 300 ./seguardjs-cli tests/tmpoc4jukbq.js tests/tmpoc4jukbq.js.gexf src/test/resources/config.yaml
 
-test-js: jar
-	./seguardjs-cli src/test/resources/example.js src/test/resources/example.js.gexf src/test/resources/config.yaml
+test-java-core: $(TEST_JAVA_CLASSES) jar
+	timeout 300 java -Djava.io.tmpdir=/tmp -Xmx4096m -jar $(JAR) -apk tests/example.apk -android $(ANDROID_SDK)/platforms -outputPath /tmp/output.gexf \
+            -mode core -sourceSinkFile config/SourcesAndSinks.txt -apkclasses /tmp/classes.txt -config src/test/resources/config.yaml \
+            -java /tmo/output.jar.out
 
 clean:
 	rm -r target
