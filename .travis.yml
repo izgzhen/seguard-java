@@ -11,8 +11,11 @@ cache:
     - $HOME/.m2
     - $HOME/.sbt
 install:
-  - git clone https://github.com/izgzhen/android-platforms
+  - wget --quiet https://github.com/izgzhen/android-platforms/releases/download/v0.1/android-tools-linux.zip
+  - unzip -q android-tools-linux.zip -d android-tools-linux
+  - yes | android-tools-linux/tools/bin/sdkmanager --licenses
+  - android-tools-linux/tools/bin/sdkmanager 'platforms;android-19'
 script:
   - make init
   - make
-  - make test
+  - ANDROID_SDK=$PWD/android-tools-linux make test
