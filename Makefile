@@ -1,10 +1,10 @@
-all: jar
-
 JAR := target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
 
 jar: $(JAR)
 
-.phony: init test test-resource check
+all: jar
+
+.phony: init test test-resource check jar
 
 check:
 	./check-jdk-version
