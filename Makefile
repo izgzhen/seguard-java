@@ -33,16 +33,10 @@ update-gitver:
 $(JAR): $(SRC_FILES)
 	mvn -q -B compile assembly:single -o
 
-regtest-not-record:
-	grep 'private val record = false' src/test/scala/edu/washington/cs/seguard/JsTest.scala
-
-test: test-js-core test-java-core
+test: test-java-e2e
 	mvn -q test
 
-test-js-core: regtest-not-record jar
-	timeout 300 ./seguardjs-cli tests/tmpoc4jukbq.js tests/tmpoc4jukbq.js.gexf src/test/resources/config.yaml
-
-test-java-core: $(TEST_JAVA_CLASSES) jar
+test-java-e2e: $(TEST_JAVA_CLASSES) jar
 	timeout 300 java -Djava.io.tmpdir=/tmp -Xmx4096m -jar $(JAR) -apk tests/example.apk -android $(ANDROID_SDK)/platforms -outputPath /tmp/output.gexf \
             -mode core -sourceSinkFile config/SourcesAndSinks.txt -apkclasses /tmp/classes.txt -config src/test/resources/config.yaml \
             -java /tmo/output.jar.out

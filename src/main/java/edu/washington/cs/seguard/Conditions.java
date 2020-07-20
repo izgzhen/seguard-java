@@ -22,6 +22,12 @@ public class Conditions {
         return config.dataflowClassNames.contains(method.getClass().getName());
     }
 
+    /**
+     * A method is sensitive iff. it is not app method and any of the following:
+     *   1) it is a source/sink method
+     *   2) it has a sensitive method name
+     *   3) it has a sensitive package name
+     */
     public boolean isSensitiveMethod(SootMethod method) {
         if (method.getDeclaringClass().isApplicationClass()) {
             return false;

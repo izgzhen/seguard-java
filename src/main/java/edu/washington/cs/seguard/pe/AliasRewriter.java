@@ -5,8 +5,6 @@
 package edu.washington.cs.seguard.pe;
 
 import edu.washington.cs.seguard.Conditions;
-import edu.washington.cs.seguard.Util;
-import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import soot.*;

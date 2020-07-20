@@ -22,14 +22,26 @@ Analyze JS (see `src/test/resources/config.yaml` for example config file):
 
 ## Test
 
+### Unit Tests
+
+```
+mvn -q test
+```
+
+Test files:
+
+- `src/test/scala/edu/washington/cs/seguard/JsTest.scala`
+
+### End2end Tests
+
 Test Java analysis:
 
 ```bash
-make test-js-core
+make test-js-e2e
 ```
 
 Test JS analysis:
 
 ```
-make test-java-core
+make test-java-e2e
 ```

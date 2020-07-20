@@ -19,8 +19,6 @@ import java.io.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.lang.System.nanoTime;
-
 public class Util {
     public enum Lang {
         JAVA,
