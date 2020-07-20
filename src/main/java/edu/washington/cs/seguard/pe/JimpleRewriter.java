@@ -12,8 +12,9 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.util.*;
 
 import edu.washington.cs.seguard.SootOptionManager;
-import edu.washington.cs.seguard.util.StatManager;
 import edu.washington.cs.seguard.Util;
+import edu.washington.cs.seguard.util.StatManager;
+import edu.washington.cs.seguard.SootUtil;
 import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,6 @@ import edu.washington.cs.seguard.Util.SourceLines;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.xmlpull.v1.XmlPullParserException;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;

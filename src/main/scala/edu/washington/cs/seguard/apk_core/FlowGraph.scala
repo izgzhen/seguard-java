@@ -4,14 +4,14 @@
   @author: Zhen Zhang
  */
 
-package edu.washington.cs.seguard.java_core
+package edu.washington.cs.seguard.apk_core
 
 import java.io.PrintWriter
 import java.util.Collections
 
 import com.semantic_graph.NodeId
 import com.semantic_graph.writer.GraphWriter
-import edu.washington.cs.seguard.{Abstraction, Conditions, Config, EdgeType, NodeType, SeGuardEdgeAttr, SeGuardNodeAttr, SootOptionManager, Util}
+import edu.washington.cs.seguard.{Abstraction, Conditions, Config, EdgeType, NodeType, SeGuardEdgeAttr, SeGuardNodeAttr, SootOptionManager, SootUtil, Util}
 import edu.washington.cs.seguard.SeGuardEdgeAttr.SeGuardEdgeAttr
 import edu.washington.cs.seguard.SeGuardNodeAttr.SeGuardNodeAttr
 import edu.washington.cs.seguard.core.IFDSDataFlowTransformer
@@ -20,12 +20,12 @@ import edu.washington.cs.seguard.util.StatManager
 import org.apache.commons.lang3.StringEscapeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import soot.jimple.{IntConstant, ReturnStmt, Stmt, StringConstant}
+import soot.jimple.{InstanceInvokeExpr, IntConstant, ReturnStmt, Stmt, StringConstant}
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator
-import soot.jimple.toolkits.callgraph.CallGraph
+import soot.jimple.toolkits.callgraph.{CallGraph, Edge}
 import soot.toolkits.graph.{BriefUnitGraph, DirectedGraph, MHGDominatorsFinder}
 import soot.toolkits.scalar.{LocalDefs, SimpleLiveLocals, SmartLocalDefs}
-import soot.{Body, Local, PackManager, Scene, SceneTransformer, SootClass, SootMethod, Transform}
+import soot.{Body, Local, PackManager, RefType, Scene, SceneTransformer, SootClass, SootMethod, Transform}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -34,11 +34,20 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
                 graphWriter: GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr],  config: Config) {
     private val logger: Logger = LoggerFactory.getLogger("FlowGraph")
 
+    private val libraryClasses = mutable.Set[SootClass]()
+    private def isLibraryClass(c: SootClass) = libraryClasses.contains(c)
+
     /**
      * Construct flow-graph
      */
     def Main(): Unit = {
         Scene.v().loadNecessaryClasses()
+
+        for (c <- Scene.v().getClasses.asScala) {
+            if (config.getLibraryPrefixes.asScala.exists(prefix => c.getName.startsWith(prefix))) {
+                libraryClasses.add(c)
+            }
+        }
 
         // FIXME: port StatManager to Scala
         //        if (statManager != null) {
@@ -49,7 +58,7 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
         //        }
 
         val staticStringMap = setEntrypointsAndGetStaticStringMap()
-        collectStaticStringFields(staticStringMap)
+        addStaticStringFactsToGraph(staticStringMap)
 
         val transformer = new IFDSDataFlowTransformer(conditions, config)
 
@@ -61,19 +70,18 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
         // static facts from call-graph
         PackManager.v().getPack("wjtp").add(new Transform("wjtp.myTransform", new SceneTransformer() {
             override def internalTransform(phaseName: String, options: java.util.Map[String, String]) {
-                // Collect some data-flow facts into flow-graph
-                collectDataflowFacts(transformer)
-
-                // Collect other facts into the flow-graph (dot)
-                // FIXME: Non-det
-                processOtherFacts()
+                addAllDataFlowFactsToGraph(transformer)
+                addOtherFactsToGraph()
             }
         }));
         logger.info("Run Soot packs...")
         SootOptionManager.Manager().sootRunPacks()
     }
 
-    private def collectDataflowFacts(transformer: IFDSDataFlowTransformer): Unit = {
+    /**
+     * Collect some data-flow facts into flow-graph
+     */
+    private def addAllDataFlowFactsToGraph(transformer: IFDSDataFlowTransformer): Unit = {
         for (cls <- Scene.v().getClasses.asScala) {
             for (m <- cls.getMethods.asScala) {
                 if (!(cls.isJavaLibraryClass || !m.hasActiveBody) && !(conditions.blacklisted(m))) {
@@ -83,11 +91,13 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
                         if (s.containsInvokeExpr) {
                             val invoked = s.getInvokeExpr.getMethod
                             if (conditions.isSensitiveMethod(invoked)) {
+                                // For each value used by the sensitive method invocation
                                 for (vbox <- u.getUseBoxes.asScala) {
                                     for (p <- transformer.solver.ifdsResultsAt(u).asScala) {
                                         if (vbox.getValue.equals(p.getO1)) {
+                                            // Check what is the abstract value for the parameters and add data-flow facts
                                             for (abstraction <- p.getO2.asScala) {
-                                                processDataFlowFacts(abstraction, graphWriter, invoked)
+                                                addDataFlowFactsToGraph(abstraction, graphWriter, invoked)
                                             }
                                         }
                                     }
@@ -100,11 +110,15 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
         }
     }
 
+    /**
+     * Go through app classes and Set entry-points of analysis
+     * @return collected map of each class's static string attributes (hame -> value)
+     */
     private def setEntrypointsAndGetStaticStringMap(): Map[SootClass, Map[String, String]] = {
         val staticStringMap = mutable.TreeMap[SootClass, Map[String, String]]()(Ordering.by(_.toString))
 
         // Collecting interesting methods and static attribute strings by iterating all classes
-        val ms = mutable.TreeSet[SootMethod]()(Ordering.by(_.toString))
+        val appMethods = mutable.TreeSet[SootMethod]()(Ordering.by(_.toString))
         for (appCls <- Scene.v().getApplicationClasses.asScala) {
             if (appCls.isConcrete) {
                 Scene.v().forceResolve(appCls.getName, SootClass.BODIES)
@@ -114,7 +128,7 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
                         appMethod.retrieveActiveBody()
                         val b = appMethod.getActiveBody
                         if (b != null) {
-                            ms.add(appMethod)
+                            appMethods.add(appMethod)
                         }
                     } catch {
                         case _: RuntimeException =>
@@ -123,13 +137,15 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
             }
         }
 
+        // FIXME: Reuse this code when statManager is ported
         //        if (statManager != null) {
         //            statManager.put(MS_NUM, ms.size());
         //            statManager.put(ORIGINAL_NUM_ENTRYPOINTS, Scene.v().getEntryPoints().size());
         //        }
+
         val entryPoints = mutable.TreeSet[String]()
         // for each concrete application class's method with body
-        for (m <- ms) {
+        for (m <- appMethods) {
             // if the application class inherits some library class, print the inherited library class
             // and count such type of application classes. we might consider them as priority
             val cls = m.getDeclaringClass
@@ -147,7 +163,8 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
                 }
             }
         }
-        //
+
+        // FIXME: Reuse this code when statManager is ported
         //        if (statManager != null) {
         //            statManager.put(NEW_NUM_ENTRYPOINTS, entryPoints.size());
         //        }
@@ -159,43 +176,137 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
         staticStringMap.toMap
     }
 
-    private def processOtherFacts(): Unit = {
+    private val methodAndReachables = mutable.Map[SootMethod, mutable.Set[SootMethod]]()
+    private var methodTargets: Map[SootMethod, Set[SootMethod]] = _
+
+    /**
+     * Patch the call graph with silly missing edges
+     * FIXME: Why are they missing?
+     */
+    private def patchCallGraph(): Unit = {
+        for (c <- Scene.v().getApplicationClasses.asScala) {
+            if (!isLibraryClass(c)) {
+                for (m <- c.getMethods.asScala) {
+                    try {
+                        m.retrieveActiveBody()
+                    } catch {
+                        case _: RuntimeException =>
+                    }
+                    if (m.isConcrete && m.hasActiveBody) {
+                        for (unit <- m.getActiveBody.getUnits.asScala) {
+                            val stmt = unit.asInstanceOf[Stmt]
+                            if (stmt.containsInvokeExpr()) {
+                                val invokedTarget = SootUtil.getMethodUnsafe(stmt.getInvokeExpr)
+                                if (invokedTarget != null) {
+                                    var edge: Edge = null
+                                    try {
+                                        edge = Scene.v().getCallGraph.findEdge(stmt, invokedTarget)
+                                    } catch {
+                                        case _: Exception =>
+                                    }
+                                    if (edge == null) {
+                                        Scene.v().getCallGraph.addEdge(new Edge(m, stmt, invokedTarget))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    def reachableMethods(m: SootMethod): Set[SootMethod] = {
+        methodAndReachables.get(m) match {
+            case Some(s) => return s.toSet
+            case None =>
+        }
+        val reachables = mutable.Set[SootMethod](m)
+        methodAndReachables.put(m, reachables)
+        val worklist = mutable.Queue[SootMethod]()
+        worklist.addOne(m)
+        while (worklist.nonEmpty) {
+            val source = worklist.dequeue()
+            methodTargets.get(source) match {
+                case Some(targets) =>
+                    for (target <- targets) {
+                        if (!reachables.contains(target)) {
+                            reachables.add(target)
+                            worklist.addOne(target)
+                        }
+                    }
+                case None =>
+            }
+        }
+        reachables.toSet
+    }
+
+    def addCallFactsFromReachables(method: SootMethod): Unit = {
+        for (reached <- reachableMethods(method)) {
+            if (conditions.isSensitiveMethod(reached) || conditions.isDataflowMethod(reached)) {
+                addCallEdge(method, reached)
+            }
+        }
+    }
+
+    /**
+     * FIXME: Non-det
+     */
+    private def addOtherFactsToGraph(): Unit = {
+        patchCallGraph()
+
         val cg = Scene.v().getCallGraph
+
+        methodTargets = Scene.v().getCallGraph.sourceMethods().asScala.map(src => (
+          src.method(), Scene.v().getCallGraph.edgesOutOf(src).asScala.map(_.getTgt.method()).toSet)).toMap
+
+        // FIXME: Reuse this code when statManager is ported
         //        if (statManager != null) {
         //            statManager.put(CG_SIZE, cg.size());
         //        }
+
         if (config.isDebug) {
             val printWriter = new PrintWriter(config.getCallGraphDumpPath)
             printWriter.write(cg.toString)
             printWriter.close()
         }
 
-        collectCallGraphRelationships(cg)
+        // FIXME: this is quite surprising...can we generate reachability info directly?
+//        addCallGraphRelationshipFactsToGraph(cg)
 
         // Collect fact around each method
-        for (cls <- Scene.v().getClasses.asScala) {
+        val classes = Scene.v().getClasses.asScala.toList
+        for (cls <- classes) {
             if (cls.isApplicationClass) {
                 for (method <- cls.getMethods.asScala) {
-                    if (!method.isJavaLibraryMethod && !conditions.blacklisted(method))
-                        try {
-                            method.retrieveActiveBody()
+                    if (!method.isJavaLibraryMethod) {
+                        if (Constants.isBackgroundContextAPI(method)) {
+                            addCallFactsFromReachables(method)
+                        }
+
+                        if (!conditions.blacklisted(method)) {
                             collectSensitiveInheritance(method)
 
-                            val b = method.getActiveBody
-                            if (b != null) {
-                                collectIntraprocFacts(method, b)
-                            } else {
-                                logger.warn("Failed to getActiveBody of {}", method.getSignature)
+                            try {
+                                method.retrieveActiveBody()
+                                val b = method.getActiveBody
+                                if (b != null) {
+                                    addIntraprocFactsToGraph(method, b)
+                                } else {
+                                    logger.warn("Failed to getActiveBody of {}", method.getSignature)
+                                }
+                            } catch {
+                                case _: RuntimeException =>
                             }
-                        } catch {
-                            case _: RuntimeException =>
                         }
+                    }
                 }
             }
         }
     }
 
-    private def collectIntraprocFacts(method: SootMethod, b: Body): Unit = {
+    private def addIntraprocFactsToGraph(method: SootMethod, b: Body): Unit = {
         val unitGraph = new BriefUnitGraph(b)
 
         // API happens-before
@@ -212,14 +323,14 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
                 // TODO: fix the reversed call edge issue
                 // if `A` called `B: Runnable`'s `start`, then there should be edge from `A` to `B`, but it seems reversed now
 
-                collectHappensBefore(dominanceDirectedGraph, stmt, currentInvoked)
+                addHappensBeforeFactToGraph(dominanceDirectedGraph, stmt, currentInvoked)
 
                 // NOTE: there is some bug with callgraph construction which doesn't link the parent with certain APIs,
                 // e.g. Runtime.exec correctly. Example: c577b7e730f955a5f99642e5a8898f64a5b5080d1bf2096804f9992a895ac956.apk
-                addCallEdge(method, currentInvoked)
+//                addCallEdge(method, currentInvoked)
 
                 if ((conditions.isSensitiveMethod(currentInvoked)) || conditions.isDataflowMethod(currentInvoked)) {
-                    collectLocalDataflowIntoSensitiveAPI(stmt, currentInvoked)
+                    addLocalDataflowIntoSensitiveAPIFactToGraph(stmt, currentInvoked)
                 }
             }
         }
@@ -227,7 +338,7 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
 
     private val libNodeMethods = mutable.Set[SootMethod]()
 
-    private def collectLocalDataflowIntoSensitiveAPI(stmt: soot.Unit, currentInvoked: SootMethod): Unit = {
+    private def addLocalDataflowIntoSensitiveAPIFactToGraph(stmt: soot.Unit, currentInvoked: SootMethod): Unit = {
         for (use <- stmt.getUseBoxes.asScala) {
             val v = createMethodNode(currentInvoked)
             use.getValue match {
@@ -248,7 +359,7 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
         }
     }
 
-    private def collectHappensBefore(dominanceDirectedGraph: DirectedGraph[soot.Unit],
+    private def addHappensBeforeFactToGraph(dominanceDirectedGraph: DirectedGraph[soot.Unit],
                                      stmt: soot.Unit, currentInvoked: SootMethod) {
         for (dominator <- dominanceDirectedGraph.getPredsOf(stmt).asScala) {
             val domInvoked = getInvokedMethod(dominator)
@@ -295,12 +406,17 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
         }
     }
 
-    private def collectCallGraphRelationships(cg: CallGraph): Unit = {
+    private def addCallGraphRelationshipFactsToGraph(cg: CallGraph): Unit = {
         for (e <- cg.asScala) {
             addCallEdge(e.getSrc.method(), e.getTgt.method())
         }
     }
 
+    /**
+     * Add call edge if source node is not blacklisted
+     * @param src
+     * @param tgt
+     */
     private def addCallEdge(src: SootMethod, tgt: SootMethod): Unit = {
         if (!conditions.blacklisted(src)) {
             val u = createMethodNode(src)
@@ -326,12 +442,16 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
                 NodeType.METHOD
             }
         }
-        graphWriter.createNode(method.getName,
+        graphWriter.createNode(
+            method.getDeclaringClass.getName + "." + method.getName,
             Map(SeGuardNodeAttr.TYPE -> nodeType.toString,
                 SeGuardNodeAttr.TAG -> tag))
     }
 
-    private def collectStaticStringFields(staticStringMap: Map[SootClass, Map[String, String]]): Unit = {
+    /**
+     * Add static string facts to the abstract graph
+     */
+    private def addStaticStringFactsToGraph(staticStringMap: Map[SootClass, Map[String, String]]): Unit = {
         for (cls <- staticStringMap.keySet) {
             if (!conditions.blacklisted(cls)) {
                 try {
@@ -342,7 +462,7 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
                             logger.warn("Skip too long static string {}", value)
                         } else {
                             val assignment = fieldName + " = " + StringEscapeUtils.escapeJava(value)
-                            val v = graphWriter.createNode(assignment, Map(SeGuardNodeAttr.TYPE -> NodeType.CONST_STRING.toString))
+                            val v = graphWriter.createNode(assignment, Map(SeGuardNodeAttr.TYPE -> NodeType.STMT.toString))
                             graphWriter.addEdge(v, u, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
                         }
                     }
@@ -363,7 +483,8 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
         null
     }
 
-    def processDataFlowFacts(abstraction : Abstraction, g : GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr], invoked: SootMethod): Unit = {
+    def addDataFlowFactsToGraph(abstraction : Abstraction, g : GraphWriter[SeGuardNodeAttr, SeGuardEdgeAttr],
+                                invoked: SootMethod): Unit = {
         abstraction match {
             case Abstraction.StringConstant(s) =>
                 val str = Util.fixedDotStr(s)
@@ -377,6 +498,7 @@ class FlowGraph(conditions: Conditions, statManager: StatManager,
                 val v = createMethodNode(invoked)
                 g.addEdge(u, v, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))
             case Abstraction.MethodConstant(method) =>
+                // Value returned from source method (u) is consumed by sink method (v)
                 val u = createMethodNode(method)
                 val v = createMethodNode(invoked)
                 g.addEdge(u, v, Map(SeGuardEdgeAttr.TYPE -> EdgeType.DATAFLOW.toString))

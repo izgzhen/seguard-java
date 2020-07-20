@@ -19,6 +19,7 @@ public class Config {
     @Getter @Setter List<String> sensitivePackageNameKeywords;
     @Getter @Setter List<String> dataflowClassNames;
     @Getter @Setter List<String> blacklistedPackagePrefixes;
+    @Setter List<String> libraryPrefixes;
     @Setter List<String> sensitiveConstStringKeywords;
 
     public List<String> getSensitiveConstStringKeywords() {
@@ -36,6 +37,10 @@ public class Config {
 
     public String getCallGraphDumpPath() {
         return callGraphDumpPath;
+    }
+
+    public List<String> getLibraryPrefixes() {
+        return libraryPrefixes;
     }
 
     public static Config load(String path) {

@@ -24,15 +24,16 @@ import soot.toolkits.scalar.Pair;
 
 public class DataFlowAnalysis
         extends DefaultJimpleIFDSTabulationProblem<Pair<Value, Set<Abstraction>>, InterproceduralCFG<Unit, SootMethod>> {
-    private Conditions conditions;
-    private Map<Unit, Map<Value, Set<Abstraction>>> unitAbstractionMap = new TreeMap<>(Comparator.comparing(Object::toString));
-    private Map<Unit, Map<Value, Set<Abstraction>>> unitAbstractionAfterMap = new TreeMap<>(Comparator.comparing(Object::toString));
-    private Set<SootMethod> visitedMethods = new TreeSet<>(Comparator.comparing(Object::toString));
-    private Config config;
+    private final Conditions conditions;
+    private final Map<Unit, Map<Value, Set<Abstraction>>> unitAbstractionMap = new TreeMap<>(Comparator.comparing(Object::toString));
+    private final Map<Unit, Map<Value, Set<Abstraction>>> unitAbstractionAfterMap = new TreeMap<>(Comparator.comparing(Object::toString));
+    private final Set<SootMethod> visitedMethods = new TreeSet<>(Comparator.comparing(Object::toString));
+    private final Config config;
     private Logger logger = LoggerFactory.getLogger(DataFlowAnalysis.class);
 
     DataFlowAnalysis(InterproceduralCFG<Unit, SootMethod> icfg, Conditions conditions, Config config) {
         super(icfg);
+        logger.info("Init DataFlowAnalysis");
         this.config = config;
         this.conditions = conditions;
     }

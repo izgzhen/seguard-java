@@ -15,11 +15,14 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * TODO: rewrite this in Scala
+ */
 public class IFDSDataFlowTransformer extends SceneTransformer {
     public IFDSSolver<Unit, Pair<Value, Set<Abstraction>>, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver;
 
-    private Conditions conditions;
-    private Config config;
+    private final Conditions conditions;
+    private final Config config;
     public IFDSDataFlowTransformer(Conditions conditions, Config config) {
         this.conditions = conditions;
         this.config = config;
