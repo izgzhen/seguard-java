@@ -1,4 +1,4 @@
-GITHASH := $(shell git hash)
+GITHASH := $(shell git rev-parse --short=8 --verify HEAD)
 
 JAR := target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
 GITHASH_FILE := $(JAR).gitver
