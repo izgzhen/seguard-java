@@ -1,6 +1,9 @@
-JAR := target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
+GITHASH := $(shell git hash)
 
-jar: $(JAR)
+JAR := target/seguard-1.0-SNAPSHOT-jar-with-dependencies.jar
+GITHASH_FILE := $(JAR).gitver
+
+jar: $(JAR) update-gitver
 
 all: jar
 
@@ -23,15 +26,18 @@ init: check $(TEST_JAVA_CLASSES)
 
 SRC_FILES := $(shell find src/ -type f -name '*.scala') $(shell find src/ -type f -name '*.java') pom.xml
 
+update-gitver:
+	echo $(GITHASH) > $(GITHASH_FILE)
+
 # -B for batch mode
 $(JAR): $(SRC_FILES)
-	mvn -B compile assembly:single -o
+	mvn -q -B compile assembly:single -o
 
 regtest-not-record:
 	grep 'private val record = false' src/test/scala/edu/washington/cs/seguard/JsTest.scala
 
 test: test-js-core test-java-core
-	mvn test
+	mvn -q test
 
 test-js-core: regtest-not-record jar
 	timeout 300 ./seguardjs-cli tests/tmpoc4jukbq.js tests/tmpoc4jukbq.js.gexf src/test/resources/config.yaml
