@@ -31,7 +31,7 @@ update-gitver:
 
 # -B for batch mode
 $(JAR): $(SRC_FILES)
-	mvn -q -B compile assembly:single -o
+	mvn -q -B compile assembly:single
 
 test: test-java-e2e
 	mvn -q test
